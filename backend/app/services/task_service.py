@@ -31,6 +31,7 @@ class TaskService:
                 "design_status": DesignStatus.PENDING,
                 "approval_status": ApprovalStatus.PENDING,
                 "posting_status": PostingStatus.DRAFT,
+                "approval_comment": None,
             }
         )
 
@@ -128,4 +129,59 @@ class TaskService:
         return await self.repo.update(
             task_id,
             {"design_status": DesignStatus.COMPLETED},
+        )
+
+    # ---------- APPROVAL WORKFLOW ----------
+
+    async def approve_task(self, task_id: str, user: dict) -> dict:
+        if user.get("role") not in {"Approver", "Admin"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to approve tasks",
+            )
+
+        task = await self.get_task(task_id)
+
+        if task["design_status"] != DesignStatus.COMPLETED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Task must be completed before approval",
+            )
+
+        return await self.repo.update(
+            task_id,
+            {
+                "approval_status": ApprovalStatus.APPROVED,
+                "approval_comment": None,
+            },
+        )
+
+    async def request_changes(self, task_id: str, comment: str, user: dict) -> dict:
+        if user.get("role") not in {"Approver", "Admin"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to request changes",
+            )
+
+        if not comment or not comment.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Approval comment is required",
+            )
+
+        task = await self.get_task(task_id)
+
+        if task["design_status"] != DesignStatus.COMPLETED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Task must be completed before requesting changes",
+            )
+
+        return await self.repo.update(
+            task_id,
+            {
+                "approval_status": ApprovalStatus.CHANGES_REQUIRED,
+                "design_status": DesignStatus.WORKING,
+                "approval_comment": comment,
+            },
         )

@@ -32,18 +32,19 @@ def to_task_response(task: dict) -> TaskResponse:
         design_status=task["design_status"],
         approval_status=task["approval_status"],
         posting_status=task["posting_status"],
+        approval_comment=task.get("approval_comment"),
         created_at=task["created_at"],
         updated_at=task["updated_at"],
     )
 
 
-# ---------- REQUEST MODELS ----------
-
 class AssignDesignerRequest(BaseModel):
     designer_id: str
 
 
-# ---------- CREATE TASK ----------
+class RequestChangesRequest(BaseModel):
+    comment: str
+
 
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
@@ -53,8 +54,6 @@ async def create_task(
 ):
     return to_task_response(await service.create_task(payload, current_user))
 
-
-# ---------- READ TASKS ----------
 
 @router.get("/", response_model=list[TaskResponse])
 async def list_tasks(
@@ -73,8 +72,6 @@ async def get_task(
     return to_task_response(await service.get_task(task_id))
 
 
-# ---------- ASSIGN DESIGNER (THIS WAS MISSING) ----------
-
 @router.post("/{task_id}/assign", response_model=TaskResponse)
 async def assign_designer(
     task_id: str,
@@ -82,15 +79,10 @@ async def assign_designer(
     current_user: dict = Depends(get_current_user),
     service: TaskService = Depends(get_task_service),
 ):
-    task = await service.assign_designer(
-        task_id=task_id,
-        designer_id=payload.designer_id,
-        user=current_user,
+    return to_task_response(
+        await service.assign_designer(task_id, payload.designer_id, current_user)
     )
-    return to_task_response(task)
 
-
-# ---------- DESIGNER WORKFLOW ----------
 
 @router.post("/{task_id}/start", response_model=TaskResponse)
 async def start_task(
@@ -108,3 +100,24 @@ async def complete_task(
     service: TaskService = Depends(get_task_service),
 ):
     return to_task_response(await service.complete_task(task_id, current_user))
+
+
+@router.post("/{task_id}/approve", response_model=TaskResponse)
+async def approve_task(
+    task_id: str,
+    current_user: dict = Depends(get_current_user),
+    service: TaskService = Depends(get_task_service),
+):
+    return to_task_response(await service.approve_task(task_id, current_user))
+
+
+@router.post("/{task_id}/request-changes", response_model=TaskResponse)
+async def request_changes(
+    task_id: str,
+    payload: RequestChangesRequest,
+    current_user: dict = Depends(get_current_user),
+    service: TaskService = Depends(get_task_service),
+):
+    return to_task_response(
+        await service.request_changes(task_id, payload.comment, current_user)
+    )
