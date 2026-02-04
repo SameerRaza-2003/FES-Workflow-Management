@@ -6,15 +6,22 @@ from app.db.mongo import get_db
 from app.core.dependencies import get_current_user
 from app.models.task import TaskCreate, TaskResponse
 from app.repositories.task_repo import TaskRepository
+from app.repositories.task_history_repo import TaskHistoryRepository
 from app.services.task_service import TaskService
+from app.services.task_history_service import TaskHistoryService
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
+# 🔧 FIXED DEPENDENCY WIRING (IMPORTANT)
 def get_task_service(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TaskService:
-    return TaskService(TaskRepository(db))
+    task_repo = TaskRepository(db)
+    history_repo = TaskHistoryRepository(db)
+    history_service = TaskHistoryService(history_repo)
+
+    return TaskService(task_repo, history_service)
 
 
 def to_task_response(task: dict) -> TaskResponse:

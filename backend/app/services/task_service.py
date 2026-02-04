@@ -8,11 +8,17 @@ from app.models.task import (
     PostingStatus,
 )
 from app.repositories.task_repo import TaskRepository
+from app.services.task_history_service import TaskHistoryService
 
 
 class TaskService:
-    def __init__(self, repo: TaskRepository):
+    def __init__(
+        self,
+        repo: TaskRepository,
+        history_service: TaskHistoryService,
+    ):
         self.repo = repo
+        self.history = history_service
 
     # ---------- CREATE ----------
 
@@ -35,7 +41,16 @@ class TaskService:
             }
         )
 
-        return await self.repo.create(task_data)
+        created = await self.repo.create(task_data)
+
+        await self.history.log_action(
+            task_id=created["_id"],
+            action="CREATE_TASK",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+        )
+
+        return created
 
     # ---------- READ ----------
 
@@ -75,6 +90,13 @@ class TaskService:
                 detail="Task not found",
             )
 
+        await self.history.log_action(
+            task_id=task["_id"],
+            action="ASSIGN_DESIGNER",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+        )
+
         return task
 
     # ---------- DESIGNER WORKFLOW ----------
@@ -100,10 +122,19 @@ class TaskService:
                 detail="Task cannot be started",
             )
 
-        return await self.repo.update(
+        updated = await self.repo.update(
             task_id,
             {"design_status": DesignStatus.WORKING},
         )
+
+        await self.history.log_action(
+            task_id=updated["_id"],
+            action="START_TASK",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+        )
+
+        return updated
 
     async def complete_task(self, task_id: str, user: dict) -> dict:
         if user.get("role") != "Designer":
@@ -126,10 +157,19 @@ class TaskService:
                 detail="Task must be in Working state",
             )
 
-        return await self.repo.update(
+        updated = await self.repo.update(
             task_id,
             {"design_status": DesignStatus.COMPLETED},
         )
+
+        await self.history.log_action(
+            task_id=updated["_id"],
+            action="COMPLETE_TASK",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+        )
+
+        return updated
 
     # ---------- APPROVAL WORKFLOW ----------
 
@@ -148,13 +188,22 @@ class TaskService:
                 detail="Task must be completed before approval",
             )
 
-        return await self.repo.update(
+        updated = await self.repo.update(
             task_id,
             {
                 "approval_status": ApprovalStatus.APPROVED,
                 "approval_comment": None,
             },
         )
+
+        await self.history.log_action(
+            task_id=updated["_id"],
+            action="APPROVE_TASK",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+        )
+
+        return updated
 
     async def request_changes(self, task_id: str, comment: str, user: dict) -> dict:
         if user.get("role") not in {"Approver", "Admin"}:
@@ -177,7 +226,7 @@ class TaskService:
                 detail="Task must be completed before requesting changes",
             )
 
-        return await self.repo.update(
+        updated = await self.repo.update(
             task_id,
             {
                 "approval_status": ApprovalStatus.CHANGES_REQUIRED,
@@ -185,3 +234,13 @@ class TaskService:
                 "approval_comment": comment,
             },
         )
+
+        await self.history.log_action(
+            task_id=updated["_id"],
+            action="REQUEST_CHANGES",
+            performed_by=ObjectId(user["_id"]),
+            role=user["role"],
+            comment=comment,
+        )
+
+        return updated
