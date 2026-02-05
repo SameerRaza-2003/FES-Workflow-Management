@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.routers import auth
 from app.routers import tasks
 from app.routers import task_history
@@ -12,6 +14,18 @@ from app.routers import analytics_bottleneck
 
 app = FastAPI(title="Workflow Management System")
 
+# ✅ CORS CONFIG (THIS IS THE FIX)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # Next.js dev
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Routers
 app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(task_history.router)
@@ -22,8 +36,6 @@ app.include_router(task_import_validation.router)
 app.include_router(task_import_commit.router)
 app.include_router(analytics_performance.router)
 app.include_router(analytics_bottleneck.router)
-
-
 
 @app.get("/")
 def health():

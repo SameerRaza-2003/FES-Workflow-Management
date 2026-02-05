@@ -1,10 +1,47 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 
 export default function LoginPage() {
+  const router = useRouter()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please enter email and password')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const { data } = await api.post('/auth/login', {
+        email,
+        password,
+      })
+
+      // Store token (Phase 2)
+      localStorage.setItem('access_token', data.access_token)
+
+      // Redirect (dashboard placeholder)
+      router.push('/dashboard')
+    } catch (err) {
+      setError('Invalid email or password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#f6f7fb]">
 
@@ -20,8 +57,6 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 max-w-md">
-
-          {/* LOGO — final size & presence */}
           <img
             src="/logo.png"
             alt="FES"
@@ -34,14 +69,12 @@ export default function LoginPage() {
             "
           />
 
-          {/* Headline */}
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 leading-tight">
             Manage your workflow
             <br />
             effortlessly
           </h1>
 
-          {/* Description */}
           <p className="mt-5 text-zinc-600 leading-relaxed">
             Plan, assign, track, and approve creative work — all from a single,
             streamlined platform designed for teams.
@@ -63,11 +96,11 @@ export default function LoginPage() {
           <CardContent className="px-8 sm:px-12 py-12 space-y-8">
 
             {/* Mobile logo */}
-            <div className="flex flex-col items-center space-y-3 lg:hidden">
+            <div className="flex flex-col items-center lg:hidden">
               <img
                 src="/logo.png"
                 alt="FES"
-                className="h-20 w-20 object-contain opacity-95"
+                className="h-20 w-20 object-contain opacity-95 mb-2"
               />
             </div>
 
@@ -86,6 +119,8 @@ export default function LoginPage() {
               <Input
                 type="email"
                 placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="
                   h-12
                   rounded-xl
@@ -98,6 +133,8 @@ export default function LoginPage() {
               <Input
                 type="password"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="
                   h-12
                   rounded-xl
@@ -108,6 +145,8 @@ export default function LoginPage() {
               />
 
               <Button
+                onClick={handleLogin}
+                disabled={loading}
                 className="
                   h-12 w-full
                   rounded-xl
@@ -117,10 +156,17 @@ export default function LoginPage() {
                   shadow-[0_10px_25px_rgba(16,185,129,0.35)]
                   hover:brightness-110
                   transition
+                  disabled:opacity-60
                 "
               >
-                Sign in
+                {loading ? 'Signing in…' : 'Sign in'}
               </Button>
+
+              {error && (
+                <p className="text-sm text-red-500 text-center">
+                  {error}
+                </p>
+              )}
             </div>
 
             {/* Footer */}
