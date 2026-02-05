@@ -8,6 +8,13 @@ class UserRepository:
         return await db.users.find_one({"email": email})
 
     @staticmethod
+    async def find_all_by_email(email: str):
+        """Find ALL users with this email (to detect duplicates)"""
+        db = get_db()
+        cursor = db.users.find({"email": email})
+        return await cursor.to_list(length=100)
+
+    @staticmethod
     async def create(user: dict):
         db = get_db()
         await db.users.insert_one(user)

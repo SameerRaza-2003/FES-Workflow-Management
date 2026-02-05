@@ -44,16 +44,9 @@ export default function LoginPage() {
 
       login(data.access_token, userData)
 
-      // Use multiple redirect strategies for reliability
-      // First try router.push
-      router.push('/dashboard')
-
-      // Fallback: If router.push doesn't work within 500ms, use window.location
-      setTimeout(() => {
-        if (window.location.pathname !== '/dashboard') {
-          window.location.href = '/dashboard'
-        }
-      }, 500)
+      // IMPORTANT: Use window.location.href for FULL page refresh
+      // router.push causes soft navigation that doesn't re-render all components
+      window.location.href = '/dashboard'
     } catch (err) {
       setError('Invalid email or password')
     } finally {

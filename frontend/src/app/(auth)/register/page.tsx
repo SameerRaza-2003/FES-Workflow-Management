@@ -68,15 +68,11 @@ export default function RegisterPage() {
                 role: (data.role || role).toLowerCase(),  // Normalize role
             }
 
+
             login(data.access_token, userData)
 
-            // Reliable redirect with fallback
-            router.push('/dashboard')
-            setTimeout(() => {
-                if (window.location.pathname !== '/dashboard') {
-                    window.location.href = '/dashboard'
-                }
-            }, 500)
+            // IMPORTANT: Use window.location.href for FULL page refresh
+            window.location.href = '/dashboard'
         } catch (err: any) {
             const message = err.response?.data?.detail || 'Registration failed. Please try again.'
             setError(message)

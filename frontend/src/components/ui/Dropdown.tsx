@@ -1,6 +1,5 @@
-'use client'
-
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface DropdownProps {
@@ -12,58 +11,86 @@ interface DropdownProps {
 
 export function Dropdown({ trigger, children, align = 'right', className }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [openUpward, setOpenUpward] = useState(false)
-    const dropdownRef = useRef<HTMLDivElement>(null)
+    const [position, setPosition] = useState<{ top: number, left?: number, right?: number }>({ top: 0 })
+    const triggerRef = useRef<HTMLDivElement>(null)
     const menuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+            if (
+                triggerRef.current &&
+                !triggerRef.current.contains(e.target as Node) &&
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node)
+            ) {
                 setIsOpen(false)
             }
         }
 
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside)
+        const updatePosition = () => {
+            if (triggerRef.current && isOpen) {
+                const rect = triggerRef.current.getBoundingClientRect()
 
-            // Check if dropdown would overflow bottom of viewport
-            if (menuRef.current && dropdownRef.current) {
-                const triggerRect = dropdownRef.current.getBoundingClientRect()
-                const menuHeight = menuRef.current.offsetHeight
-                const viewportHeight = window.innerHeight
+                // Calculate Top (handling upward opening collision)
+                let top = rect.bottom + 8
+                // Check if near bottom of viewport
+                if (window.innerHeight - rect.bottom < 200) {
+                    top = rect.top - 8 // We'll use translateY(-100%) in render
+                }
 
-                if (triggerRect.bottom + menuHeight + 10 > viewportHeight) {
-                    setOpenUpward(true)
+                // Calculate Horizontal Position
+                if (align === 'right') {
+                    // Align right edge of menu to right edge of trigger
+                    const right = window.innerWidth - rect.right
+                    setPosition({ top, right })
                 } else {
-                    setOpenUpward(false)
+                    // Align left edge of menu to left edge of trigger
+                    const left = rect.left
+                    setPosition({ top, left })
                 }
             }
         }
 
+        if (isOpen) {
+            updatePosition()
+            document.addEventListener('mousedown', handleClickOutside)
+            window.addEventListener('scroll', updatePosition, true)
+            window.addEventListener('resize', updatePosition)
+        }
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
+            window.removeEventListener('scroll', updatePosition, true)
+            window.removeEventListener('resize', updatePosition)
         }
-    }, [isOpen])
+    }, [isOpen, align])
+
+    // Render menu through portal
+    const menuData = isOpen ? (
+        <div
+            ref={menuRef}
+            style={{
+                top: position.top,
+                left: position.left,
+                right: position.right,
+                // If it opens upward (calculated in effect), we need to translate Y by -100%
+                transform: window.innerHeight - position.top < 200 ? 'translateY(-100%)' : 'none'
+            }}
+            className={cn(
+                'fixed z-[9999] min-w-[180px] py-1.5 bg-white rounded-xl border border-zinc-200/80 shadow-lg animate-scale-in origin-top-right',
+                className
+            )}
+        >
+            {children}
+        </div>
+    ) : null
 
     return (
-        <div ref={dropdownRef} className="relative inline-block">
+        <div ref={triggerRef} className="relative inline-block">
             <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
                 {trigger}
             </div>
-
-            {isOpen && (
-                <div
-                    ref={menuRef}
-                    className={cn(
-                        'absolute z-[100] min-w-[180px] py-1.5 bg-white rounded-xl border border-zinc-200/80 shadow-lg animate-scale-in',
-                        openUpward ? 'bottom-full mb-2' : 'top-full mt-2',
-                        align === 'right' ? 'right-0' : 'left-0',
-                        className
-                    )}
-                >
-                    {children}
-                </div>
-            )}
+            {isOpen && typeof document !== 'undefined' && createPortal(menuData, document.body)}
         </div>
     )
 }

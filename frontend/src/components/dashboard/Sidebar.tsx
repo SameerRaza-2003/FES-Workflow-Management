@@ -10,7 +10,6 @@ import {
   CheckSquare,
   FileCheck,
   BarChart3,
-  Upload,
   Bell,
   LogOut,
   Settings,
@@ -56,12 +55,7 @@ const navItems: NavItem[] = [
     icon: <BarChart3 className="w-5 h-5" />,
     adminOnly: true
   },
-  {
-    label: 'Import Tasks',
-    href: '/dashboard/import',
-    icon: <Upload className="w-5 h-5" />,
-    adminOnly: true
-  },
+
   {
     label: 'Notifications',
     href: '/dashboard/notifications',
