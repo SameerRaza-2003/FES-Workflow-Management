@@ -1,4 +1,5 @@
 from typing import List
+
 from bson import ObjectId
 from fastapi import HTTPException, status
 
@@ -10,6 +11,7 @@ from app.models.task import (
 )
 from app.repositories.task_repo import TaskRepository
 from app.services.task_history_service import TaskHistoryService
+from app.services.notification_service import NotificationService
 
 
 class TaskService:
@@ -17,9 +19,11 @@ class TaskService:
         self,
         repo: TaskRepository,
         history_service: TaskHistoryService,
+        notification_service: NotificationService,
     ):
         self.repo = repo
         self.history = history_service
+        self.notifications = notification_service
 
     # ---------- CREATE ----------
 
@@ -98,6 +102,14 @@ class TaskService:
             role=user["role"],
         )
 
+        # 🔔 Notification
+        await self.notifications.notify(
+            user_id=designer_oid,
+            type="TASK_ASSIGNED",
+            message="You have been assigned a new task",
+            task_id=task["_id"],
+        )
+
         return task
 
     # ---------- DESIGNER WORKFLOW ----------
@@ -170,6 +182,14 @@ class TaskService:
             role=user["role"],
         )
 
+        # 🔔 Notify assigner/admin
+        await self.notifications.notify(
+            user_id=task["assigned_by_id"],
+            type="TASK_COMPLETED",
+            message="A task has been completed and is ready for review",
+            task_id=updated["_id"],
+        )
+
         return updated
 
     # ---------- APPROVAL WORKFLOW ----------
@@ -202,6 +222,14 @@ class TaskService:
             action="APPROVE_TASK",
             performed_by=ObjectId(user["_id"]),
             role=user["role"],
+        )
+
+        # 🔔 Notify designer
+        await self.notifications.notify(
+            user_id=task["designer_id"],
+            type="TASK_APPROVED",
+            message="Your task has been approved",
+            task_id=updated["_id"],
         )
 
         return updated
@@ -244,6 +272,14 @@ class TaskService:
             comment=comment,
         )
 
+        # 🔔 Notify designer
+        await self.notifications.notify(
+            user_id=task["designer_id"],
+            type="CHANGES_REQUESTED",
+            message="Changes were requested on your task",
+            task_id=updated["_id"],
+        )
+
         return updated
 
     # ---------- ROLE-BASED VIEWS ----------
@@ -255,9 +291,7 @@ class TaskService:
                 detail="Only designers can view their tasks",
             )
 
-        return await self.repo.list_for_designer(
-            ObjectId(user["_id"])
-        )
+        return await self.repo.list_for_designer(ObjectId(user["_id"]))
 
     async def pending_approval_tasks(self, user: dict) -> List[dict]:
         if user.get("role") not in {"Approver", "Admin"}:

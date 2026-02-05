@@ -7,26 +7,43 @@ from pydantic import BaseModel
 from app.db.mongo import get_db
 from app.core.dependencies import get_current_user
 from app.models.task import TaskCreate, TaskResponse
+
 from app.repositories.task_repo import TaskRepository
 from app.repositories.task_history_repo import TaskHistoryRepository
+from app.repositories.notification_repo import NotificationRepository
+
 from app.services.task_service import TaskService
 from app.services.task_history_service import TaskHistoryService
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/tasks")
 
 
-# ---------- DEPENDENCY ----------
+# =========================================================
+# DEPENDENCY WIRING (FINAL)
+# =========================================================
 
 def get_task_service(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TaskService:
     task_repo = TaskRepository(db)
+
     history_repo = TaskHistoryRepository(db)
     history_service = TaskHistoryService(history_repo)
-    return TaskService(task_repo, history_service)
+
+    notification_repo = NotificationRepository(db)
+    notification_service = NotificationService(notification_repo)
+
+    return TaskService(
+        task_repo,
+        history_service,
+        notification_service,
+    )
 
 
-# ---------- RESPONSE MAPPER ----------
+# =========================================================
+# RESPONSE MAPPER
+# =========================================================
 
 def to_task_response(task: dict) -> TaskResponse:
     return TaskResponse(
@@ -49,7 +66,9 @@ def to_task_response(task: dict) -> TaskResponse:
     )
 
 
-# ---------- REQUEST MODELS ----------
+# =========================================================
+# REQUEST MODELS
+# =========================================================
 
 class AssignDesignerRequest(BaseModel):
     designer_id: str
@@ -60,7 +79,7 @@ class RequestChangesRequest(BaseModel):
 
 
 # =========================================================
-# 🔥 STATIC ROUTES FIRST (IMPORTANT FIX)
+# 🔥 STATIC ROUTES FIRST (CRITICAL)
 # =========================================================
 
 @router.get(

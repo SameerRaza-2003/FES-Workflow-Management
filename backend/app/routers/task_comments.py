@@ -3,12 +3,18 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.mongo import get_db
 from app.core.dependencies import get_current_user
+
 from app.models.task_comment import (
     TaskCommentCreate,
     TaskCommentResponse,
 )
+
 from app.repositories.task_comment_repo import TaskCommentRepository
+from app.repositories.task_repo import TaskRepository
+from app.repositories.notification_repo import NotificationRepository
+
 from app.services.task_comment_service import TaskCommentService
+from app.services.notification_service import NotificationService
 
 router = APIRouter(
     prefix="/tasks/{task_id}/comments",
@@ -16,12 +22,29 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# DEPENDENCY WIRING (FINAL)
+# =========================================================
+
 def get_comment_service(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> TaskCommentService:
-    repo = TaskCommentRepository(db)
-    return TaskCommentService(repo)
+    comment_repo = TaskCommentRepository(db)
+    task_repo = TaskRepository(db)
 
+    notification_repo = NotificationRepository(db)
+    notification_service = NotificationService(notification_repo)
+
+    return TaskCommentService(
+        comment_repo,
+        task_repo,
+        notification_service,
+    )
+
+
+# =========================================================
+# ADD COMMENT
+# =========================================================
 
 @router.post(
     "/",
@@ -50,6 +73,10 @@ async def add_comment(
         created_at=comment["created_at"],
     )
 
+
+# =========================================================
+# LIST COMMENTS
+# =========================================================
 
 @router.get(
     "/",
