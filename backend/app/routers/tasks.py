@@ -20,7 +20,7 @@ router = APIRouter(prefix="/tasks")
 
 
 # =========================================================
-# DEPENDENCY WIRING (FINAL)
+# DEPENDENCY WIRING
 # =========================================================
 
 def get_task_service(
@@ -42,7 +42,7 @@ def get_task_service(
 
 
 # =========================================================
-# RESPONSE MAPPER
+# RESPONSE MAPPER (BACKWARD SAFE)
 # =========================================================
 
 def to_task_response(task: dict) -> TaskResponse:
@@ -57,9 +57,12 @@ def to_task_response(task: dict) -> TaskResponse:
         tags=task.get("tags", []),
         assigned_by_id=str(task["assigned_by_id"]),
         designer_id=str(task["designer_id"]) if task.get("designer_id") else None,
-        design_status=task["design_status"],
-        approval_status=task["approval_status"],
-        posting_status=task["posting_status"],
+
+        # ✅ SAFE DEFAULTS FOR OLD DATA
+        design_status=task.get("design_status", "Pending"),
+        approval_status=task.get("approval_status", "Pending"),
+        posting_status=task.get("posting_status", "Draft"),
+
         approval_comment=task.get("approval_comment"),
         created_at=task["created_at"],
         updated_at=task["updated_at"],
@@ -79,7 +82,7 @@ class RequestChangesRequest(BaseModel):
 
 
 # =========================================================
-# 🔥 STATIC ROUTES FIRST (CRITICAL)
+# 🔥 STATIC ROUTES FIRST
 # =========================================================
 
 @router.get(
@@ -92,10 +95,7 @@ async def my_tasks(
     current_user: dict = Depends(get_current_user),
     service: TaskService = Depends(get_task_service),
 ):
-    return [
-        to_task_response(t)
-        for t in await service.my_tasks(current_user)
-    ]
+    return [to_task_response(t) for t in await service.my_tasks(current_user)]
 
 
 @router.get(

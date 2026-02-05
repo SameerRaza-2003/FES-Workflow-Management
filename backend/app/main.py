@@ -5,9 +5,10 @@ from app.routers import task_history
 from app.routers import task_comments
 from app.routers import notifications
 from app.routers import task_import
-
-
-
+from app.routers import task_import_validation
+from app.routers import task_import_commit
+from app.routers import analytics_performance
+from app.routers import analytics_bottleneck
 
 app = FastAPI(title="Workflow Management System")
 
@@ -17,6 +18,11 @@ app.include_router(task_history.router)
 app.include_router(task_comments.router)
 app.include_router(notifications.router)
 app.include_router(task_import.router)
+app.include_router(task_import_validation.router)
+app.include_router(task_import_commit.router)
+app.include_router(analytics_performance.router)
+app.include_router(analytics_bottleneck.router)
+
 
 
 @app.get("/")
