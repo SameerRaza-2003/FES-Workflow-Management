@@ -1,3 +1,4 @@
+from typing import List
 from bson import ObjectId
 from fastapi import HTTPException, status
 
@@ -54,7 +55,7 @@ class TaskService:
 
     # ---------- READ ----------
 
-    async def list_tasks(self) -> list[dict]:
+    async def list_tasks(self) -> List[dict]:
         return await self.repo.list()
 
     async def get_task(self, task_id: str) -> dict:
@@ -244,3 +245,25 @@ class TaskService:
         )
 
         return updated
+
+    # ---------- ROLE-BASED VIEWS ----------
+
+    async def my_tasks(self, user: dict) -> List[dict]:
+        if user.get("role") != "Designer":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only designers can view their tasks",
+            )
+
+        return await self.repo.list_for_designer(
+            ObjectId(user["_id"])
+        )
+
+    async def pending_approval_tasks(self, user: dict) -> List[dict]:
+        if user.get("role") not in {"Approver", "Admin"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to view pending approval tasks",
+            )
+
+        return await self.repo.list_pending_approval()

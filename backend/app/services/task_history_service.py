@@ -1,3 +1,4 @@
+from typing import List
 from bson import ObjectId
 
 from app.repositories.task_history_repo import TaskHistoryRepository
@@ -14,7 +15,7 @@ class TaskHistoryService:
         performed_by: ObjectId,
         role: str,
         comment: str | None = None,
-    ):
+    ) -> None:
         await self.repo.log(
             task_id=task_id,
             action=action,
@@ -22,3 +23,15 @@ class TaskHistoryService:
             role=role,
             comment=comment,
         )
+
+    async def get_task_history(self, task_id: str) -> List[dict]:
+        """
+        Returns full history timeline for a task.
+        Invalid task IDs return an empty list (safe for UI).
+        """
+        try:
+            task_oid = ObjectId(task_id)
+        except Exception:
+            return []
+
+        return await self.repo.list_for_task(task_oid)
