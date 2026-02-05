@@ -22,7 +22,7 @@ export default function TaskRow({ task }: { task: Task }) {
       </td>
 
       <td className="py-3 px-4 text-sm text-zinc-600">
-        {new Date(task.deadline).toLocaleDateString()}
+        {task.deadline ? new Date(task.deadline).toLocaleDateString() : '—'}
       </td>
 
       <td className="py-3 px-4 text-right">

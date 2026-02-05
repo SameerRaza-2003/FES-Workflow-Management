@@ -1,0 +1,401 @@
+﻿  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : 
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (:String) [], Rem   
+ oteException
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+Failed to compile.
+
+./src/app/(auth)/login/p
+age.tsx
+39:14  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+61:11  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+101:15  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+175:18  Error: `'` can 
+be escaped with 
+`&apos;`, `&lsquo;`, 
+`&#39;`, `&rsquo;`.  rea
+ct/no-unescaped-entities
+
+./src/app/(auth)/registe
+r/page.tsx
+67:23  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+90:21  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+139:29  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+
+./src/app/dashboard/anal
+ytics/page.tsx
+26:5  Error: 
+'TrendingDown' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+51:8  Warning: React 
+Hook useEffect has a 
+missing dependency: 
+'loadData'. Either 
+include it or remove 
+the dependency array.  r
+eact-hooks/exhaustive-de
+ps
+
+./src/app/dashboard/appr
+ovals/page.tsx
+22:10  Error: 'cn' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+36:8  Warning: React 
+Hook useEffect has a 
+missing dependency: 
+'loadTasks'. Either 
+include it or remove 
+the dependency array.  r
+eact-hooks/exhaustive-de
+ps
+57:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+78:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/app/dashboard/impo
+rt/page.tsx
+3:10  Error: 
+'useEffect' is defined 
+but never used.  @typesc
+ript-eslint/no-unused-va
+rs
+7:10  Error: 'Badge' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+8:10  Error: 
+'EmptyState' is defined 
+but never used.  @typesc
+ript-eslint/no-unused-va
+rs
+24:5  Error: 'Download' 
+is defined but never 
+used.  @typescript-eslin
+t/no-unused-vars
+77:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+97:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/app/dashboard/noti
+fications/page.tsx
+7:10  Error: 'Badge' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+15:5  Error: 'FileText' 
+is defined but never 
+used.  @typescript-eslin
+t/no-unused-vars
+64:8  Warning: React 
+Hook useEffect has a 
+missing dependency: 
+'loadNotifications'. 
+Either include it or 
+remove the dependency 
+array.  react-hooks/exha
+ustive-deps
+85:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+95:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/app/dashboard/task
+s/page.tsx
+10:10  Error: 'Tabs' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+18:3  Error: 'Filter' 
+is defined but never 
+used.  @typescript-eslin
+t/no-unused-vars
+19:3  Error: 'Calendar' 
+is defined but never 
+used.  @typescript-eslin
+t/no-unused-vars
+55:6  Warning: React 
+Hook useEffect has a 
+missing dependency: 
+'loadTasks'. Either 
+include it or remove 
+the dependency array.  r
+eact-hooks/exhaustive-de
+ps
+
+./src/app/dashboard/task
+s/[taskId]/page.tsx
+30:5  Error: 'User' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+31:5  Error: 'Tag' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+38:5  Error: 'Clock' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+46:11  Error: 'router' 
+is assigned a value but 
+never used.  @typescript
+-eslint/no-unused-vars
+66:8  Warning: React 
+Hook useEffect has a 
+missing dependency: 
+'loadTask'. Either 
+include it or remove 
+the dependency array.  r
+eact-hooks/exhaustive-de
+ps
+96:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+109:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+120:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+131:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+149:18  Error: 'err' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+264:71  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+431:65  Error: `"` can 
+be escaped with 
+`&quot;`, `&ldquo;`, 
+`&#34;`, `&rdquo;`.  rea
+ct/no-unescaped-entities
+431:81  Error: `"` can 
+be escaped with 
+`&quot;`, `&ldquo;`, 
+`&#34;`, `&rdquo;`.  rea
+ct/no-unescaped-entities
+
+./src/components/dashboa
+rd/KPISection.tsx
+9:3  Error: 
+'AlertCircle' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/components/dashboa
+rd/RecentActivity.tsx
+6:10  Error: 'Avatar' 
+is defined but never 
+used.  @typescript-eslin
+t/no-unused-vars
+
+./src/components/dashboa
+rd/Sidebar.tsx
+107:9  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+
+./src/components/dashboa
+rd/TaskOverview.tsx
+34:35  Error: 'i' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/components/dashboa
+rd/TopBar.tsx
+14:3  Error: 'Check' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+
+./src/components/tasks/T
+asksTable.tsx
+7:34  Error: 
+'DropdownDivider' is 
+defined but never used. 
+ @typescript-eslint/no-u
+nused-vars
+44:44  Error: 
+'onUpdate' is defined 
+but never used.  @typesc
+ript-eslint/no-unused-va
+rs
+
+./src/components/ui/Avat
+ar.tsx
+59:17  Warning: Using 
+`<img>` could result in 
+slower LCP and higher 
+bandwidth. Consider 
+using `<Image />` from 
+`next/image` to 
+automatically optimize 
+images. This may incur 
+additional usage or 
+cost from your 
+provider. See: https://n
+extjs.org/docs/messages/
+no-img-element  @next/ne
+xt/no-img-element
+
+./src/lib/dashboard.ts
+13:5  Error: 
+'atRiskRes' is assigned 
+a value but never used. 
+ @typescript-eslint/no-u
+nused-vars
+14:5  Error: 'stuckRes' 
+is assigned a value but 
+never used.  @typescript
+-eslint/no-unused-vars
+27:35  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+29:11  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+
+./src/lib/import.ts
+7:26  Error: Unexpected 
+any. Specify a 
+different type.  @typesc
+ript-eslint/no-explicit-
+any
+29:26  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+53:63  Error: 
+Unexpected any. Specify 
+a different type.  @type
+script-eslint/no-explici
+t-any
+
+info  - Need to disable 
+some ESLint rules? 
+Learn more here: https:/
+/nextjs.org/docs/basic-f
+eatures/eslint#disabling
+-rules

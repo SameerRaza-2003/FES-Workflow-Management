@@ -28,7 +28,8 @@ class TaskService:
     # ---------- CREATE ----------
 
     async def create_task(self, task: TaskCreate, user: dict) -> dict:
-        if user.get("role") not in {"Admin", "Assigner"}:
+        user_role = str(user.get("role", "")).lower()
+        if user_role not in {"admin", "assigner", "approver"}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not allowed to create tasks",
@@ -74,7 +75,8 @@ class TaskService:
     # ---------- ASSIGN ----------
 
     async def assign_designer(self, task_id: str, designer_id: str, user: dict) -> dict:
-        if user.get("role") not in {"Admin", "Assigner"}:
+        user_role = str(user.get("role", "")).lower()
+        if user_role not in {"admin", "assigner", "approver"}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not allowed to assign designer",
@@ -115,7 +117,8 @@ class TaskService:
     # ---------- DESIGNER WORKFLOW ----------
 
     async def start_task(self, task_id: str, user: dict) -> dict:
-        if user.get("role") != "Designer":
+        user_role = str(user.get("role", "")).lower()
+        if user_role != "designer":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only designers can start tasks",
@@ -150,7 +153,8 @@ class TaskService:
         return updated
 
     async def complete_task(self, task_id: str, user: dict) -> dict:
-        if user.get("role") != "Designer":
+        user_role = str(user.get("role", "")).lower()
+        if user_role != "designer":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only designers can complete tasks",
@@ -195,7 +199,8 @@ class TaskService:
     # ---------- APPROVAL WORKFLOW ----------
 
     async def approve_task(self, task_id: str, user: dict) -> dict:
-        if user.get("role") not in {"Approver", "Admin"}:
+        user_role = str(user.get("role", "")).lower()
+        if user_role not in {"approver", "admin"}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not allowed to approve tasks",
@@ -235,7 +240,8 @@ class TaskService:
         return updated
 
     async def request_changes(self, task_id: str, comment: str, user: dict) -> dict:
-        if user.get("role") not in {"Approver", "Admin"}:
+        user_role = str(user.get("role", "")).lower()
+        if user_role not in {"approver", "admin"}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not allowed to request changes",
@@ -285,7 +291,8 @@ class TaskService:
     # ---------- ROLE-BASED VIEWS ----------
 
     async def my_tasks(self, user: dict) -> List[dict]:
-        if user.get("role") != "Designer":
+        user_role = str(user.get("role", "")).lower()
+        if user_role != "designer":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only designers can view their tasks",
@@ -294,7 +301,8 @@ class TaskService:
         return await self.repo.list_for_designer(ObjectId(user["_id"]))
 
     async def pending_approval_tasks(self, user: dict) -> List[dict]:
-        if user.get("role") not in {"Approver", "Admin"}:
+        user_role = str(user.get("role", "")).lower()
+        if user_role not in {"approver", "admin"}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not allowed to view pending approval tasks",

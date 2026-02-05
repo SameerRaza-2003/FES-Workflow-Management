@@ -11,6 +11,7 @@ from app.routers import task_import_validation
 from app.routers import task_import_commit
 from app.routers import analytics_performance
 from app.routers import analytics_bottleneck
+from app.routers import users
 
 app = FastAPI(title="Workflow Management System")
 
@@ -36,6 +37,7 @@ app.include_router(task_import_validation.router)
 app.include_router(task_import_commit.router)
 app.include_router(analytics_performance.router)
 app.include_router(analytics_bottleneck.router)
+app.include_router(users.router)
 
 @app.get("/")
 def health():

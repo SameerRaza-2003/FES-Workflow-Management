@@ -1,0 +1,128 @@
+﻿  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./src/app/(auth)/login/page.tsx
+39:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+61:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+101:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+175:18  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/(auth)/register/page.tsx
+67:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+90:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+139:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/analytics/page.tsx
+26:5  Warning: 'TrendingDown' is defined but never used.  @typescript-eslint/no-unused-vars
+51:8  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/approvals/page.tsx
+22:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+36:8  Warning: React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+57:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+78:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/import/page.tsx
+3:10  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+7:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+8:10  Warning: 'EmptyState' is defined but never used.  @typescript-eslint/no-unused-vars
+24:5  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
+77:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+97:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/notifications/page.tsx
+7:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+15:5  Warning: 'FileText' is defined but never used.  @typescript-eslint/no-unused-vars
+64:8  Warning: React Hook useEffect has a missing dependency: 'loadNotifications'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+85:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+95:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/tasks/page.tsx
+10:10  Warning: 'Tabs' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'Filter' is defined but never used.  @typescript-eslint/no-unused-vars
+19:3  Warning: 'Calendar' is defined but never used.  @typescript-eslint/no-unused-vars
+55:6  Warning: React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/tasks/[taskId]/page.tsx
+30:5  Warning: 'User' is defined but never used.  @typescript-eslint/no-unused-vars
+31:5  Warning: 'Tag' is defined but never used.  @typescript-eslint/no-unused-vars
+38:5  Warning: 'Clock' is defined but never used.  @typescript-eslint/no-unused-vars
+46:11  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+66:8  Warning: React Hook useEffect has a missing dependency: 'loadTask'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+96:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+109:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+120:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+131:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+149:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+264:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+431:65  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+431:81  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/dashboard/KPISection.tsx
+9:3  Warning: 'AlertCircle' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/RecentActivity.tsx
+6:10  Warning: 'Avatar' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/Sidebar.tsx
+107:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/dashboard/TaskOverview.tsx
+34:35  Warning: 'i' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/TopBar.tsx
+14:3  Warning: 'Check' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/tasks/TasksTable.tsx
+7:34  Warning: 'DropdownDivider' is defined but never used.  @typescript-eslint/no-unused-vars
+44:44  Warning: 'onUpdate' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/Avatar.tsx
+59:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/lib/dashboard.ts
+13:5  Warning: 'atRiskRes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+14:5  Warning: 'stuckRes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+27:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:11  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/import.ts
+7:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+53:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/13) ...
+   Generating static pages (3/13) 
+   Generating static pages (6/13) 
+   Generating static pages (9/13) 
+ Ô£ô Generating static pages (13/13)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    138 B          87.5 kB
+Ôö£ Ôùï /_not-found                          873 B          88.2 kB
+Ôö£ Ôùï /dashboard                           4.89 kB         136 kB
+Ôö£ Ôùï /dashboard/analytics                 6.2 kB          135 kB
+Ôö£ Ôùï /dashboard/approvals                 5.22 kB         137 kB
+Ôö£ Ôùï /dashboard/import                    6.97 kB         136 kB
+Ôö£ Ôùï /dashboard/notifications             4.31 kB         136 kB
+Ôö£ Ôùï /dashboard/tasks                     4.27 kB         139 kB
+Ôö£ ãÆ /dashboard/tasks/[taskId]            6.2 kB          138 kB
+Ôö£ Ôùï /login                               3.76 kB         129 kB
+Ôöö Ôùï /register                            5.1 kB          130 kB
++ First Load JS shared by all            87.3 kB
+  Ôö£ chunks/117-63f512de3129adce.js       31.7 kB
+  Ôö£ chunks/fd9d1056-f645e3cd7ccf8003.js  53.6 kB
+  Ôöö other shared chunks (total)          1.95 kB
+
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

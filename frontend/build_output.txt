@@ -1,0 +1,80 @@
+﻿  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+node.exe : 
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (:String) [], Rem   
+ oteException
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+> Build error occurred
+Error: You cannot use 
+different slug names 
+for the same dynamic 
+path ('taskId' !== 
+'task_id').
+    at handleSlug 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:94:31)
+    at UrlNode._insert 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:131:17)
+    at UrlNode._insert 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:142:40)
+    at UrlNode._insert 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:142:40)
+    at UrlNode.insert 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:13:14)
+    at F:\Work\FES- 
+Workflow Management\fron
+tend\node_modules\next\d
+ist\shared\lib\router\ut
+ils\sorted-routes.js:165
+:46
+    at Array.forEach 
+(<anonymous>)
+    at getSortedRoutes 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\shared
+\lib\router\utils\sorted
+-routes.js:165:21)
+    at F:\Work\FES- 
+Workflow Management\fron
+tend\node_modules\next\d
+ist\build\index.js:625:6
+5
+    at Span.traceFn 
+(F:\Work\FES- Workflow M
+anagement\frontend\node_
+modules\next\dist\trace\
+trace.js:147:20)

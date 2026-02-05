@@ -1,60 +1,189 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import { Avatar } from '@/components/ui/Avatar'
+import { useToast } from '@/components/ui/Toast'
+import {
+  LayoutDashboard,
+  CheckSquare,
+  FileCheck,
+  BarChart3,
+  Upload,
+  Bell,
+  LogOut,
+  Settings,
+  ChevronRight
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Tasks', href: '/dashboard/tasks' },
-  { label: 'Approvals', href: '/dashboard/approvals' },
-  { label: 'Analytics', href: '/dashboard/analytics' },
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ReactNode
+  adminOnly?: boolean
+  designerOnly?: boolean
+}
+
+const navItems: NavItem[] = [
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: <LayoutDashboard className="w-5 h-5" />
+  },
+  {
+    label: 'My Tasks',
+    href: '/dashboard/tasks',
+    icon: <CheckSquare className="w-5 h-5" />,
+    designerOnly: true
+  },
+  {
+    label: 'All Tasks',
+    href: '/dashboard/tasks',
+    icon: <CheckSquare className="w-5 h-5" />,
+    adminOnly: true
+  },
+  {
+    label: 'Approvals',
+    href: '/dashboard/approvals',
+    icon: <FileCheck className="w-5 h-5" />,
+    adminOnly: true
+  },
+  {
+    label: 'Analytics',
+    href: '/dashboard/analytics',
+    icon: <BarChart3 className="w-5 h-5" />,
+    adminOnly: true
+  },
+  {
+    label: 'Import Tasks',
+    href: '/dashboard/import',
+    icon: <Upload className="w-5 h-5" />,
+    adminOnly: true
+  },
+  {
+    label: 'Notifications',
+    href: '/dashboard/notifications',
+    icon: <Bell className="w-5 h-5" />
+  },
 ]
 
 export default function Sidebar() {
+  const pathname = usePathname()
+  const { user, logout, isAdmin, isDesigner } = useAuth()
+  const { showToast } = useToast()
+
+  // Filter nav items based on role
+  const filteredNavItems = navItems.filter(item => {
+    if (item.adminOnly && !isAdmin) return false
+    if (item.designerOnly && !isDesigner) return false
+    // If both adminOnly items and designerOnly items for tasks, show appropriate one
+    if (item.label === 'All Tasks' && isDesigner) return false
+    if (item.label === 'My Tasks' && isAdmin) return false
+    return true
+  })
+
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard'
+    }
+    return pathname.startsWith(href)
+  }
+
   return (
     <aside className="
-      w-64
-      bg-white/80
+      w-72
+      bg-white/90
       backdrop-blur-xl
       border-r border-zinc-200/60
-      px-6
-      py-8
+      px-5
+      py-6
       hidden lg:flex
       flex-col
+      h-screen
+      sticky top-0
     ">
       {/* Brand */}
-      <div className="flex items-center gap-3 mb-12">
+      <div className="flex items-center gap-3 px-3 mb-8">
         <img
           src="/logo.png"
           alt="FES Workflow"
-          className="h-9 w-auto object-contain"
+          className="h-10 w-10 object-contain"
         />
-        <span className="font-semibold text-zinc-900">
-          FES Workflow
-        </span>
+        <div>
+          <span className="font-semibold text-zinc-900 text-lg">
+            FES Workflow
+          </span>
+          <p className="text-xs text-zinc-500">Management System</p>
+        </div>
       </div>
 
-      {/* Nav */}
-      <nav className="space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="
-              block rounded-xl px-4 py-2.5
-              text-sm text-zinc-600
-              hover:bg-emerald-50
-              hover:text-emerald-700
-              transition
-            "
-          >
-            {item.label}
-          </Link>
-        ))}
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1">
+        {filteredNavItems.map((item) => {
+          const active = isActive(item.href)
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all group',
+                active
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+              )}
+            >
+              <span className={cn(
+                'transition',
+                active ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-600'
+              )}>
+                {item.icon}
+              </span>
+              {item.label}
+              {active && (
+                <ChevronRight className="w-4 h-4 ml-auto opacity-70" />
+              )}
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="flex-1" />
+      {/* User Profile */}
+      <div className="pt-4 border-t border-zinc-200/60">
+        <div className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-zinc-100 transition cursor-pointer">
+          <Avatar name={user?.fullName || 'User'} size="md" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-zinc-900 truncate">
+              {user?.fullName || 'User'}
+            </p>
+            <p className="text-xs text-zinc-500 capitalize">
+              {user?.role || 'Member'}
+            </p>
+          </div>
+        </div>
 
-      <p className="text-xs text-zinc-400">
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => showToast('info', 'Settings page coming soon!')}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 rounded-lg transition"
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </button>
+          <button
+            onClick={logout}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className="text-xs text-zinc-400 text-center mt-4">
         © 2026 FES
       </p>
     </aside>
