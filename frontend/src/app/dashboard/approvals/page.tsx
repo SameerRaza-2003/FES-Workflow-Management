@@ -10,19 +10,31 @@ import { Modal, ModalFooter } from '@/components/ui/Modal'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useToast } from '@/components/ui/Toast'
-import { getPendingApprovalTasks, Task, approveTask, requestChanges } from '@/lib/tasks'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+    Task,
+    getPendingAdminApprovalTasks,
+    getPendingFinalApprovalTasks,
+    adminApproveTask,
+    adminRequestChanges,
+    finalApproveTask,
+    approverRequestChanges,
+} from '@/lib/tasks'
 import {
     CheckCircle2,
     XCircle,
     Eye,
     Calendar,
     Clock,
+    Flame,
 } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 export default function ApprovalsPage() {
     const { showToast } = useToast()
+    const { user, isAdmin } = useAuth()
+    const isApprover = user?.role === 'approver'
+
     const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -33,13 +45,21 @@ export default function ApprovalsPage() {
 
     useEffect(() => {
         loadTasks()
-    }, [])
+    }, [isAdmin, isApprover])
 
     const loadTasks = async () => {
         setLoading(true)
         try {
-            const data = await getPendingApprovalTasks()
-            setTasks(data)
+            // Role-based queue selection
+            if (isAdmin) {
+                // Admin: Layer 1 - tasks awaiting admin approval
+                const data = await getPendingAdminApprovalTasks()
+                setTasks(data)
+            } else if (isApprover) {
+                // Approver: Layer 2 - tasks already admin-approved
+                const data = await getPendingFinalApprovalTasks()
+                setTasks(data)
+            }
         } catch (err) {
             console.error('Failed to load tasks:', err)
             showToast('error', 'Failed to load pending approvals')
@@ -51,9 +71,14 @@ export default function ApprovalsPage() {
     const handleApprove = async (task: Task) => {
         setProcessing(task.id)
         try {
-            await approveTask(task.id)
+            if (isAdmin) {
+                await adminApproveTask(task.id)
+                showToast('success', 'Task approved - sent to Approver for final review')
+            } else if (isApprover) {
+                await finalApproveTask(task.id)
+                showToast('success', 'Task fully approved!')
+            }
             setTasks((prev) => prev.filter((t) => t.id !== task.id))
-            showToast('success', 'Task approved successfully')
         } catch (err) {
             showToast('error', 'Failed to approve task')
         } finally {
@@ -69,12 +94,16 @@ export default function ApprovalsPage() {
 
         setProcessing(selectedTask.id)
         try {
-            await requestChanges(selectedTask.id, changesComment)
+            if (isAdmin) {
+                await adminRequestChanges(selectedTask.id, changesComment)
+            } else if (isApprover) {
+                await approverRequestChanges(selectedTask.id, changesComment)
+            }
             setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id))
             setShowChangesModal(false)
             setChangesComment('')
             setSelectedTask(null)
-            showToast('success', 'Changes requested')
+            showToast('success', 'Changes requested - designer will be notified')
         } catch (err) {
             showToast('error', 'Failed to request changes')
         } finally {
@@ -87,14 +116,38 @@ export default function ApprovalsPage() {
         setShowChangesModal(true)
     }
 
+    // Determine page title based on role
+    const pageTitle = isAdmin ? 'Admin Approvals' : isApprover ? 'Final Approvals' : 'Approvals'
+    const pageSubtitle = isAdmin
+        ? `${tasks.length} task${tasks.length !== 1 ? 's' : ''} awaiting your approval`
+        : `${tasks.length} task${tasks.length !== 1 ? 's' : ''} awaiting final approval`
+
     return (
         <>
             <TopBar
-                title="Approvals"
-                subtitle={`${tasks.length} task${tasks.length !== 1 ? 's' : ''} pending review`}
+                title={pageTitle}
+                subtitle={pageSubtitle}
             />
 
             <main className="px-6 lg:px-10 py-8">
+                {/* Role indicator */}
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
+                    <p className="text-sm text-emerald-800">
+                        {isAdmin && (
+                            <>
+                                <strong>Layer 1 Review:</strong> Approve tasks completed by designers.
+                                Approved tasks will move to the Approver for final sign-off.
+                            </>
+                        )}
+                        {isApprover && (
+                            <>
+                                <strong>Final Review:</strong> Tasks here have already been reviewed by Admin.
+                                Your approval marks them as fully complete.
+                            </>
+                        )}
+                    </p>
+                </div>
+
                 {loading ? (
                     <SkeletonTable rows={4} />
                 ) : tasks.length === 0 ? (
@@ -104,7 +157,8 @@ export default function ApprovalsPage() {
                         {tasks.map((task, index) => (
                             <Card
                                 key={task.id}
-                                className="rounded-2xl border-zinc-200/50 shadow-soft hover-lift animate-fade-in"
+                                className={`rounded-2xl border-zinc-200/50 shadow-soft hover-lift animate-fade-in ${task.is_urgent ? 'ring-2 ring-orange-400 border-orange-200' : ''
+                                    }`}
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
                                 <CardContent className="p-6">
@@ -112,20 +166,36 @@ export default function ApprovalsPage() {
                                         {/* Task Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                                    {task.title.charAt(0)}
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-semibold flex-shrink-0 ${task.is_urgent
+                                                    ? 'bg-gradient-to-br from-orange-500 to-red-500'
+                                                    : 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                                                    }`}>
+                                                    {task.is_urgent ? <Flame className="w-6 h-6" /> : task.title.charAt(0)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <Link
-                                                        href={`/dashboard/tasks/${task.id}`}
-                                                        className="font-semibold text-zinc-900 hover:text-emerald-600 transition text-lg"
-                                                    >
-                                                        {task.title}
-                                                    </Link>
+                                                    <div className="flex items-center gap-2">
+                                                        <Link
+                                                            href={`/dashboard/tasks/${task.id}`}
+                                                            className="font-semibold text-zinc-900 hover:text-emerald-600 transition text-lg"
+                                                        >
+                                                            {task.title}
+                                                        </Link>
+                                                        {task.is_urgent && (
+                                                            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                                                                🔥 Urgent
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="flex flex-wrap items-center gap-3 mt-2">
                                                         <span className="text-sm text-zinc-500">
                                                             {task.content_type}
                                                         </span>
+                                                        {task.content_for && (
+                                                            <>
+                                                                <span className="text-zinc-300">•</span>
+                                                                <span className="text-sm text-zinc-500">{task.content_for}</span>
+                                                            </>
+                                                        )}
                                                         {task.size && (
                                                             <>
                                                                 <span className="text-zinc-300">•</span>
@@ -139,10 +209,10 @@ export default function ApprovalsPage() {
 
                                                     {/* Designer & Deadline */}
                                                     <div className="flex flex-wrap items-center gap-4 mt-3">
-                                                        {task.designer_id && (
+                                                        {(task.designer_name || task.designer_id) && (
                                                             <div className="flex items-center gap-2 text-sm text-zinc-600">
-                                                                <Avatar name={task.designer_id} size="sm" />
-                                                                <span>{task.designer_id.split('@')[0]}</span>
+                                                                <Avatar name={task.designer_name || task.designer_id || ''} size="sm" />
+                                                                <span>{task.designer_name || 'Designer'}</span>
                                                             </div>
                                                         )}
                                                         {task.deadline && (
@@ -183,7 +253,7 @@ export default function ApprovalsPage() {
                                                 className="gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110"
                                             >
                                                 <CheckCircle2 className="w-4 h-4" />
-                                                Approve
+                                                {isAdmin ? 'Approve' : 'Final Approve'}
                                             </Button>
                                         </div>
                                     </div>

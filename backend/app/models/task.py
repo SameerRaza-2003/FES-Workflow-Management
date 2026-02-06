@@ -17,7 +17,8 @@ class DesignStatus(str, Enum):
 
 class ApprovalStatus(str, Enum):
     PENDING = "Pending"
-    APPROVED = "Approved"
+    ADMIN_APPROVED = "AdminApproved"  # Layer 1: Admin approved, awaiting Approver
+    APPROVED = "Approved"  # Layer 2: Fully approved by Approver
     CHANGES_REQUIRED = "ChangesRequired"
     REJECTED = "Rejected"
     ON_HOLD = "OnHold"
@@ -30,6 +31,15 @@ class PostingStatus(str, Enum):
     FAILED = "Failed"
 
 
+class ContentForEntity(str, Enum):
+    FES = "FES"
+    FES_UAE = "FES UAE"
+    DAPHNE_BY_MONA = "Daphne by Mona"
+    HAITHAM_COLLEGE = "Haitham College"
+    FES_AID = "FES AID"
+    IELTS_BY_FES = "IELTS by FES"
+
+
 class TaskBase(BaseModel):
     content_type: str = Field(..., description="Content Type from Excel")
     size: Optional[str] = None
@@ -38,10 +48,23 @@ class TaskBase(BaseModel):
     instructions: Optional[str] = None
     deadline: Optional[datetime] = None
     tags: List[str] = []
+    content_for: Optional[ContentForEntity] = None
+    is_urgent: bool = False
 
 
 class TaskCreate(TaskBase):
     pass
+
+
+class TaskUpdate(BaseModel):
+    """Partial update model for admin edits"""
+    title: Optional[str] = None
+    content: Optional[str] = None
+    instructions: Optional[str] = None
+    deadline: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    content_for: Optional[ContentForEntity] = None
+    is_urgent: Optional[bool] = None
 
 
 class TaskInDB(TaskBase):
@@ -68,10 +91,16 @@ class TaskResponse(TaskBase):
     id: str
     assigned_by_id: str
     designer_id: Optional[str]
+    
+    # Human-readable names (resolved from IDs)
+    assigned_by_name: Optional[str] = None
+    designer_name: Optional[str] = None
 
     design_status: DesignStatus
     approval_status: ApprovalStatus
     posting_status: PostingStatus
+    
+    approval_comment: Optional[str] = None
 
     created_at: datetime
     updated_at: datetime

@@ -9,6 +9,8 @@ class TaskHistoryResponse(BaseModel):
     task_id: str
     action: str
     performed_by: str
+    performed_by_name: Optional[str] = None  # Human-readable name
     role: str
     comment: Optional[str] = None
     created_at: datetime
+

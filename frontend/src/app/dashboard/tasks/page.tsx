@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import TopBar from '@/components/dashboard/TopBar'
 import TaskTable from '@/components/tasks/TasksTable'
-import { getTasks, getMyTasks, Task, createTask, TaskCreate } from '@/lib/tasks'
+import { getTasks, getMyTasks, Task, createTask, TaskCreate, CONTENT_FOR_OPTIONS, ContentForEntity } from '@/lib/tasks'
 import { Button } from '@/components/ui/button'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/input'
@@ -47,6 +47,8 @@ export default function TasksPage() {
     deadline: '',
     size: '',
     tags: [],
+    content_for: null,
+    is_urgent: false,
   })
   const [creating, setCreating] = useState(false)
 
@@ -112,6 +114,8 @@ export default function TasksPage() {
         deadline: '',
         size: '',
         tags: [],
+        content_for: null,
+        is_urgent: false,
       })
       showToast('success', 'Task created successfully')
     } catch (err) {
@@ -276,6 +280,40 @@ export default function TasksPage() {
                 onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
                 className="rounded-xl"
               />
+            </div>
+          </div>
+
+          {/* Content For and Urgent */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                Content For
+              </label>
+              <select
+                value={newTask.content_for || ''}
+                onChange={(e) => setNewTask({ ...newTask, content_for: (e.target.value || null) as ContentForEntity | null })}
+                className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              >
+                <option value="">Select entity...</option>
+                {CONTENT_FOR_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center">
+              <label className="flex items-center gap-3 cursor-pointer mt-6">
+                <input
+                  type="checkbox"
+                  checked={newTask.is_urgent || false}
+                  onChange={(e) => setNewTask({ ...newTask, is_urgent: e.target.checked })}
+                  className="w-5 h-5 rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
+                />
+                <span className="text-sm font-medium text-zinc-700">
+                  🔥 Mark as Urgent
+                </span>
+              </label>
             </div>
           </div>
 

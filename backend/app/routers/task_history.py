@@ -5,6 +5,7 @@ from app.db.mongo import get_db
 from app.core.dependencies import get_current_user
 from app.models.task_history import TaskHistoryResponse
 from app.repositories.task_history_repo import TaskHistoryRepository
+from app.repositories.user_repo import UserRepository
 from app.services.task_history_service import TaskHistoryService
 
 router = APIRouter(
@@ -27,6 +28,10 @@ async def get_task_history(
     service: TaskHistoryService = Depends(get_history_service),
 ):
     history = await service.get_task_history(task_id)
+    
+    # Batch lookup all performer names
+    user_ids = [str(h["performed_by"]) for h in history]
+    names_map = await UserRepository.get_names_map(user_ids)
 
     return [
         TaskHistoryResponse(
@@ -34,6 +39,7 @@ async def get_task_history(
             task_id=str(h["task_id"]),
             action=h["action"],
             performed_by=str(h["performed_by"]),
+            performed_by_name=names_map.get(str(h["performed_by"])),
             role=h["role"],
             comment=h.get("comment"),
             created_at=h["created_at"],

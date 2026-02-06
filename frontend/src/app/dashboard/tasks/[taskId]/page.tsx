@@ -21,8 +21,10 @@ import {
     addTaskComment,
     startTask,
     completeTask,
-    approveTask,
-    requestChanges,
+    adminApproveTask,
+    adminRequestChanges,
+    finalApproveTask,
+    approverRequestChanges,
 } from '@/lib/tasks'
 import {
     ArrowLeft,
@@ -45,6 +47,7 @@ export default function TaskDetailPage() {
     const params = useParams()
     const router = useRouter()
     const { isAdmin, isDesigner, user } = useAuth()
+    const isApprover = user?.role === 'approver'
     const { showToast } = useToast()
 
     const taskId = params.taskId as string
@@ -124,9 +127,15 @@ export default function TaskDetailPage() {
 
     const handleApproveTask = async () => {
         try {
-            const updated = await approveTask(taskId)
-            setTask(updated)
-            showToast('success', 'Task approved')
+            if (isAdmin) {
+                const updated = await adminApproveTask(taskId)
+                setTask(updated)
+                showToast('success', 'Task approved - sent to Approver for final review')
+            } else if (isApprover) {
+                const updated = await finalApproveTask(taskId)
+                setTask(updated)
+                showToast('success', 'Task fully approved!')
+            }
             loadTask()
         } catch (err) {
             showToast('error', 'Failed to approve task')
@@ -140,8 +149,13 @@ export default function TaskDetailPage() {
         }
 
         try {
-            const updated = await requestChanges(taskId, changesComment)
-            setTask(updated)
+            if (isAdmin) {
+                const updated = await adminRequestChanges(taskId, changesComment)
+                setTask(updated)
+            } else if (isApprover) {
+                const updated = await approverRequestChanges(taskId, changesComment)
+                setTask(updated)
+            }
             setShowChangesModal(false)
             setChangesComment('')
             showToast('success', 'Changes requested')
@@ -183,7 +197,8 @@ export default function TaskDetailPage() {
 
     const canStart = isDesigner && task.design_status === 'Pending' && task.designer_id
     const canComplete = isDesigner && task.design_status === 'Working'
-    const canApprove = isAdmin && task.design_status === 'Completed' && task.approval_status === 'Pending'
+    const canAdminApprove = isAdmin && task.design_status === 'Completed' && task.approval_status === 'Pending'
+    const canFinalApprove = isApprover && task.approval_status === 'AdminApproved'
 
     return (
         <>
@@ -233,11 +248,11 @@ export default function TaskDetailPage() {
                                     Mark Complete
                                 </Button>
                             )}
-                            {canApprove && (
+                            {(canAdminApprove || canFinalApprove) && (
                                 <>
                                     <Button onClick={handleApproveTask} className="gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600">
                                         <CheckCircle2 className="w-4 h-4" />
-                                        Approve
+                                        {canAdminApprove ? 'Approve' : 'Final Approve'}
                                     </Button>
                                     <Button
                                         onClick={() => setShowChangesModal(true)}
@@ -305,14 +320,33 @@ export default function TaskDetailPage() {
                                         <p className="mt-1 text-zinc-900 flex items-center gap-2">
                                             {task.designer_id ? (
                                                 <>
-                                                    <Avatar name={task.designer_id} size="sm" />
-                                                    {task.designer_id.split('@')[0]}
+                                                    <Avatar name={task.designer_name || task.designer_id} size="sm" />
+                                                    {task.designer_name || 'Designer'}
                                                 </>
                                             ) : (
                                                 <span className="text-zinc-400 italic">Unassigned</span>
                                             )}
                                         </p>
                                     </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Assigned By</label>
+                                        <p className="mt-1 text-zinc-900 flex items-center gap-2">
+                                            <Avatar name={task.assigned_by_name || task.assigned_by_id} size="sm" />
+                                            {task.assigned_by_name || 'Admin'}
+                                        </p>
+                                    </div>
+                                    {task.content_for && (
+                                        <div>
+                                            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Content For</label>
+                                            <p className="mt-1 text-zinc-900">{task.content_for}</p>
+                                        </div>
+                                    )}
+                                    {task.is_urgent && (
+                                        <div>
+                                            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Priority</label>
+                                            <p className="mt-1 text-orange-600 font-medium">🔥 Urgent</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {task.content && (
@@ -359,11 +393,11 @@ export default function TaskDetailPage() {
                                     ) : (
                                         comments.map((comment) => (
                                             <div key={comment.id} className="flex gap-3">
-                                                <Avatar name={comment.author_id} size="sm" />
+                                                <Avatar name={comment.author_name || comment.author_id} size="sm" />
                                                 <div className="flex-1 bg-zinc-50 rounded-xl p-4">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="font-medium text-zinc-900 text-sm">
-                                                            {comment.author_id.split('@')[0]}
+                                                            {comment.author_name || comment.author_id}
                                                         </span>
                                                         <span className="text-xs text-zinc-400">
                                                             {comment.author_role}
@@ -422,7 +456,7 @@ export default function TaskDetailPage() {
                                                     )} />
                                                     <div className="flex-1">
                                                         <p className="text-sm text-zinc-900">
-                                                            <span className="font-medium">{entry.performed_by.split('@')[0]}</span>
+                                                            <span className="font-medium">{entry.performed_by_name || entry.performed_by}</span>
                                                             {' '}
                                                             <span className="text-zinc-500">{entry.action}</span>
                                                         </p>

@@ -15,6 +15,10 @@ class NotificationRepository:
         type: str,
         message: str,
         task_id: ObjectId | None = None,
+        actor_name: str | None = None,
+        actor_role: str | None = None,
+        action: str | None = None,
+        task_title: str | None = None,
     ) -> dict:
         result = await self.collection.insert_one(
             {
@@ -24,6 +28,10 @@ class NotificationRepository:
                 "task_id": task_id,
                 "is_read": False,
                 "created_at": datetime.utcnow(),
+                "actor_name": actor_name,
+                "actor_role": actor_role,
+                "action": action,
+                "task_title": task_title,
             }
         )
         return await self.collection.find_one({"_id": result.inserted_id})

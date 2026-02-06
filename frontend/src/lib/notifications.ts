@@ -8,6 +8,12 @@ export interface Notification {
   task_id?: string | null
   is_read: boolean
   created_at: string
+
+  // Enhanced notification fields
+  actor_name?: string | null
+  actor_role?: string | null
+  action?: string | null
+  task_title?: string | null
 }
 
 export async function getNotifications(): Promise<Notification[]> {

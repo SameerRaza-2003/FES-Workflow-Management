@@ -53,12 +53,6 @@ export default function DashboardPage() {
                 Create Task
               </Button>
             </Link>
-            <Link href="/dashboard/import">
-              <Button variant="outline" className="gap-2 rounded-xl">
-                Import Tasks
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
           </div>
         )}
 

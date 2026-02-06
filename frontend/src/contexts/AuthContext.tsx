@@ -99,9 +99,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Derive role booleans from normalized user role
     const userRole = user?.role || ''
-    const isAdmin = userRole === 'admin' || userRole === 'approver'
+    const isAdmin = userRole === 'admin'
     const isDesigner = userRole === 'designer'
-    const isApprover = userRole === 'admin' || userRole === 'approver'
+    const isApprover = userRole === 'approver'
 
     const value: AuthContextValue = {
         user,

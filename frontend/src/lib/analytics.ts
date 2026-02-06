@@ -4,6 +4,7 @@ import { api } from './api'
 
 export interface DesignerPerformance {
     designer_id: string
+    designer_name?: string
     completed: number
     pending: number
     total: number
@@ -15,6 +16,17 @@ export interface MyPerformance {
     pending: number
     total: number
     completion_rate: number
+}
+
+export interface AssignerPerformance {
+    assigner_id: string
+    assigner_name?: string
+    total_assigned: number
+    completed: number
+    approved: number
+    pending_approval: number
+    in_progress: number
+    approval_rate: number
 }
 
 export interface TaskRisk {
@@ -34,6 +46,11 @@ export interface DesignerLoad {
 
 export async function getAllDesignersPerformance(): Promise<DesignerPerformance[]> {
     const { data } = await api.get('/analytics/performance/designers')
+    return data
+}
+
+export async function getAllAssignersPerformance(): Promise<AssignerPerformance[]> {
+    const { data } = await api.get('/analytics/performance/assigners')
     return data
 }
 

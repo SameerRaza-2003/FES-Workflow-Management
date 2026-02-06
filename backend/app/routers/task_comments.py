@@ -12,6 +12,7 @@ from app.models.task_comment import (
 from app.repositories.task_comment_repo import TaskCommentRepository
 from app.repositories.task_repo import TaskRepository
 from app.repositories.notification_repo import NotificationRepository
+from app.repositories.user_repo import UserRepository
 
 from app.services.task_comment_service import TaskCommentService
 from app.services.notification_service import NotificationService
@@ -23,7 +24,7 @@ router = APIRouter(
 
 
 # =========================================================
-# DEPENDENCY WIRING (FINAL)
+# DEPENDENCY WIRING
 # =========================================================
 
 def get_comment_service(
@@ -63,11 +64,16 @@ async def add_comment(
         content=payload.content,
         user=current_user,
     )
+    
+    # Get author name
+    author_id_str = str(comment["author_id"])
+    names_map = await UserRepository.get_names_map([author_id_str])
 
     return TaskCommentResponse(
         id=str(comment["_id"]),
         task_id=str(comment["task_id"]),
-        author_id=str(comment["author_id"]),
+        author_id=author_id_str,
+        author_name=names_map.get(author_id_str),
         author_role=comment["author_role"],
         content=comment["content"],
         created_at=comment["created_at"],
@@ -89,12 +95,17 @@ async def list_comments(
     service: TaskCommentService = Depends(get_comment_service),
 ):
     comments = await service.list_comments(task_id)
+    
+    # Batch lookup all author names
+    author_ids = [str(c["author_id"]) for c in comments]
+    names_map = await UserRepository.get_names_map(author_ids)
 
     return [
         TaskCommentResponse(
             id=str(c["_id"]),
             task_id=str(c["task_id"]),
             author_id=str(c["author_id"]),
+            author_name=names_map.get(str(c["author_id"])),
             author_role=c["author_role"],
             content=c["content"],
             created_at=c["created_at"],

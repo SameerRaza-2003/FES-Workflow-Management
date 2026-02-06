@@ -3,8 +3,20 @@ import { api } from './api'
 // ============= Types =============
 
 export type DesignStatus = 'Pending' | 'Working' | 'OnHold' | 'Completed' | 'Discarded' | 'NotCompleted'
-export type ApprovalStatus = 'Pending' | 'Approved' | 'ChangesRequired' | 'Rejected' | 'OnHold'
+export type ApprovalStatus = 'Pending' | 'AdminApproved' | 'Approved' | 'ChangesRequired' | 'Rejected' | 'OnHold'
 export type PostingStatus = 'Draft' | 'Scheduled' | 'Posted' | 'Failed'
+
+// Content For / Entity options
+export type ContentForEntity = 'FES' | 'FES UAE' | 'Daphne by Mona' | 'Haitham College' | 'FES AID' | 'IELTS by FES'
+
+export const CONTENT_FOR_OPTIONS: { value: ContentForEntity; label: string }[] = [
+  { value: 'FES', label: 'FES' },
+  { value: 'FES UAE', label: 'FES UAE' },
+  { value: 'Daphne by Mona', label: 'Daphne by Mona' },
+  { value: 'Haitham College', label: 'Haitham College' },
+  { value: 'FES AID', label: 'FES AID' },
+  { value: 'IELTS by FES', label: 'IELTS by FES' },
+]
 
 export interface Task {
   id: string
@@ -15,11 +27,22 @@ export interface Task {
   instructions?: string | null
   deadline?: string | null
   tags: string[]
+  content_for?: ContentForEntity | null
+  is_urgent: boolean
+
   assigned_by_id: string
   designer_id?: string | null
+
+  // Human-readable names (resolved from IDs)
+  assigned_by_name?: string | null
+  designer_name?: string | null
+
   design_status: DesignStatus
   approval_status: ApprovalStatus
   posting_status: PostingStatus
+
+  approval_comment?: string | null
+
   created_at: string
   updated_at: string
 }
@@ -32,12 +55,25 @@ export interface TaskCreate {
   instructions?: string | null
   deadline?: string | null
   tags?: string[]
+  content_for?: ContentForEntity | null
+  is_urgent?: boolean
+}
+
+export interface TaskUpdate {
+  title?: string | null
+  content?: string | null
+  instructions?: string | null
+  deadline?: string | null
+  tags?: string[] | null
+  content_for?: ContentForEntity | null
+  is_urgent?: boolean | null
 }
 
 export interface TaskComment {
   id: string
   task_id: string
   author_id: string
+  author_name?: string | null  // Human-readable name
   author_role: string
   content: string
   created_at: string
@@ -48,6 +84,7 @@ export interface TaskHistory {
   task_id: string
   action: string
   performed_by: string
+  performed_by_name?: string | null  // Human-readable name
   role: string
   comment?: string | null
   created_at: string
@@ -65,11 +102,6 @@ export async function getMyTasks(): Promise<Task[]> {
   return data
 }
 
-export async function getPendingApprovalTasks(): Promise<Task[]> {
-  const { data } = await api.get('/tasks/pending-approval')
-  return data
-}
-
 export async function getTask(taskId: string): Promise<Task> {
   const { data } = await api.get(`/tasks/${taskId}`)
   return data
@@ -77,6 +109,11 @@ export async function getTask(taskId: string): Promise<Task> {
 
 export async function createTask(task: TaskCreate): Promise<Task> {
   const { data } = await api.post('/tasks/', task)
+  return data
+}
+
+export async function updateTask(taskId: string, updates: TaskUpdate): Promise<Task> {
+  const { data } = await api.patch(`/tasks/${taskId}`, updates)
   return data
 }
 
@@ -97,13 +134,37 @@ export async function completeTask(taskId: string): Promise<Task> {
   return data
 }
 
-export async function approveTask(taskId: string): Promise<Task> {
-  const { data } = await api.post(`/tasks/${taskId}/approve`)
+// ============= Two-Layer Approval =============
+
+// Admin approval endpoints
+export async function getPendingAdminApprovalTasks(): Promise<Task[]> {
+  const { data } = await api.get('/tasks/pending-admin-approval')
   return data
 }
 
-export async function requestChanges(taskId: string, comment: string): Promise<Task> {
-  const { data } = await api.post(`/tasks/${taskId}/request-changes`, { comment })
+export async function adminApproveTask(taskId: string): Promise<Task> {
+  const { data } = await api.post(`/tasks/${taskId}/admin-approve`)
+  return data
+}
+
+export async function adminRequestChanges(taskId: string, comment: string): Promise<Task> {
+  const { data } = await api.post(`/tasks/${taskId}/admin-request-changes`, { comment })
+  return data
+}
+
+// Approver (final) approval endpoints
+export async function getPendingFinalApprovalTasks(): Promise<Task[]> {
+  const { data } = await api.get('/tasks/pending-final-approval')
+  return data
+}
+
+export async function finalApproveTask(taskId: string): Promise<Task> {
+  const { data } = await api.post(`/tasks/${taskId}/final-approve`)
+  return data
+}
+
+export async function approverRequestChanges(taskId: string, comment: string): Promise<Task> {
+  const { data } = await api.post(`/tasks/${taskId}/approver-request-changes`, { comment })
   return data
 }
 

@@ -11,12 +11,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/Toast'
 import {
     getAllDesignersPerformance,
+    getAllAssignersPerformance,
     getMyPerformance,
     getOverdueTasks,
     getAtRiskTasks,
     getStuckTasks,
     getDesignerLoad,
     DesignerPerformance,
+    AssignerPerformance,
     MyPerformance,
     TaskRisk,
     DesignerLoad,
@@ -30,6 +32,9 @@ import {
     Target,
     CheckCircle2,
     BarChart3,
+    UserCheck,
+    Award,
+    Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -40,6 +45,7 @@ export default function AnalyticsPage() {
 
     const [loading, setLoading] = useState(true)
     const [designersPerformance, setDesignersPerformance] = useState<DesignerPerformance[]>([])
+    const [assignersPerformance, setAssignersPerformance] = useState<AssignerPerformance[]>([])
     const [myPerformance, setMyPerformance] = useState<MyPerformance | null>(null)
     const [overdueTasks, setOverdueTasks] = useState<TaskRisk[]>([])
     const [atRiskTasks, setAtRiskTasks] = useState<TaskRisk[]>([])
@@ -54,14 +60,16 @@ export default function AnalyticsPage() {
         setLoading(true)
         try {
             if (isAdmin) {
-                const [perf, overdue, atRisk, stuck, load] = await Promise.all([
+                const [perf, assignerPerf, overdue, atRisk, stuck, load] = await Promise.all([
                     getAllDesignersPerformance(),
+                    getAllAssignersPerformance(),
                     getOverdueTasks(),
                     getAtRiskTasks(3),
                     getStuckTasks(5),
                     getDesignerLoad(5),
                 ])
                 setDesignersPerformance(perf)
+                setAssignersPerformance(assignerPerf)
                 setOverdueTasks(overdue)
                 setAtRiskTasks(atRisk)
                 setStuckTasks(stuck)
@@ -77,6 +85,14 @@ export default function AnalyticsPage() {
             setLoading(false)
         }
     }
+
+    // Calculate totals for summary stats
+    const totalTasks = designersPerformance.reduce((sum, d) => sum + d.total, 0)
+    const totalCompleted = designersPerformance.reduce((sum, d) => sum + d.completed, 0)
+    const overallCompletionRate = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0
+
+    const topDesigner = [...designersPerformance].sort((a, b) => b.completion_rate - a.completion_rate)[0]
+    const topAssigner = [...assignersPerformance].sort((a, b) => b.approval_rate - a.approval_rate)[0]
 
     // Designer view
     if (isDesigner && !isAdmin) {
@@ -126,9 +142,44 @@ export default function AnalyticsPage() {
     // Admin view
     return (
         <>
-            <TopBar title="Analytics" subtitle="Performance and bottleneck insights" />
+            <TopBar title="Analytics" subtitle="Performance insights & comparisons" />
 
             <main className="px-6 lg:px-10 py-8 space-y-8">
+                {/* Summary KPIs */}
+                {loading ? (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[...Array(4)].map((_, i) => <SkeletonKPI key={i} />)}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard
+                            title="Total Tasks"
+                            value={totalTasks}
+                            icon={<Target className="w-5 h-5" />}
+                            color="blue"
+                        />
+                        <StatCard
+                            title="Completed"
+                            value={totalCompleted}
+                            icon={<CheckCircle2 className="w-5 h-5" />}
+                            color="emerald"
+                        />
+                        <StatCard
+                            title="Overall Completion"
+                            value={`${overallCompletionRate}%`}
+                            icon={<TrendingUp className="w-5 h-5" />}
+                            color={overallCompletionRate >= 70 ? 'emerald' : overallCompletionRate >= 40 ? 'amber' : 'purple'}
+                        />
+                        <StatCard
+                            title="Top Designer"
+                            value={topDesigner?.designer_name || 'N/A'}
+                            subtitle={topDesigner ? `${Math.round(topDesigner.completion_rate)}% rate` : undefined}
+                            icon={<Award className="w-5 h-5" />}
+                            color="purple"
+                        />
+                    </div>
+                )}
+
                 {/* Bottleneck Alerts */}
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -160,39 +211,157 @@ export default function AnalyticsPage() {
                     </div>
                 )}
 
-                {/* Overloaded Designers */}
-                {designerLoad.length > 0 && (
-                    <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Users className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-semibold text-zinc-900">Overloaded Designers</h3>
-                            </div>
-                            <div className="flex flex-wrap gap-3">
-                                {designerLoad.map((designer, index) => (
-                                    <div
-                                        key={designer.designer_id}
-                                        className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-100"
-                                    >
-                                        <Avatar name={`Designer ${index + 1}`} size="sm" />
-                                        <span className="text-sm font-medium text-zinc-700">
-                                            Designer {index + 1}
-                                        </span>
-                                        <Badge variant="working">{designer.active_tasks} tasks</Badge>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Designer Performance Table */}
+                {/* Designer Performance Comparison - Bar Chart Style */}
                 <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2">
                                 <BarChart3 className="w-5 h-5 text-emerald-500" />
-                                <h3 className="font-semibold text-zinc-900">Designer Performance</h3>
+                                <h3 className="font-semibold text-zinc-900">Designer Performance Comparison</h3>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-emerald-500"></div>
+                                    Completed
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-amber-400"></div>
+                                    Pending
+                                </span>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <SkeletonTable rows={4} />
+                        ) : designersPerformance.length === 0 ? (
+                            <EmptyState type="analytics" />
+                        ) : (
+                            <div className="space-y-4">
+                                {designersPerformance
+                                    .filter(d => d.designer_id !== 'unassigned')
+                                    .sort((a, b) => b.total - a.total)
+                                    .map((designer, i) => {
+                                        const maxTotal = Math.max(...designersPerformance.map(d => d.total))
+                                        const completedWidth = (designer.completed / maxTotal) * 100
+                                        const pendingWidth = (designer.pending / maxTotal) * 100
+
+                                        return (
+                                            <div key={designer.designer_id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar name={designer.designer_name || `Designer ${i + 1}`} size="sm" />
+                                                        <span className="font-medium text-zinc-900">
+                                                            {designer.designer_name || `Designer ${i + 1}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm">
+                                                        <span className="text-zinc-500">{designer.total} tasks</span>
+                                                        <Badge variant={designer.completion_rate >= 70 ? 'approved' : designer.completion_rate >= 40 ? 'working' : 'pending'}>
+                                                            {Math.round(designer.completion_rate)}%
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="h-6 bg-zinc-100 rounded-lg overflow-hidden flex">
+                                                    <div
+                                                        className="h-full bg-emerald-500 transition-all duration-500"
+                                                        style={{ width: `${completedWidth}%` }}
+                                                    />
+                                                    <div
+                                                        className="h-full bg-amber-400 transition-all duration-500"
+                                                        style={{ width: `${pendingWidth}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Assigner Performance Section */}
+                <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <UserCheck className="w-5 h-5 text-purple-500" />
+                                <h3 className="font-semibold text-zinc-900">Assigner Performance</h3>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-purple-500"></div>
+                                    Approved
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-blue-400"></div>
+                                    Pending Approval
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-zinc-300"></div>
+                                    In Progress
+                                </span>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <SkeletonTable rows={3} />
+                        ) : assignersPerformance.length === 0 ? (
+                            <EmptyState type="analytics" />
+                        ) : (
+                            <div className="space-y-4">
+                                {assignersPerformance
+                                    .sort((a, b) => b.total_assigned - a.total_assigned)
+                                    .map((assigner, i) => {
+                                        const maxTotal = Math.max(...assignersPerformance.map(a => a.total_assigned))
+                                        const approvedWidth = (assigner.approved / maxTotal) * 100
+                                        const pendingWidth = (assigner.pending_approval / maxTotal) * 100
+                                        const inProgressWidth = (assigner.in_progress / maxTotal) * 100
+
+                                        return (
+                                            <div key={assigner.assigner_id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar name={assigner.assigner_name || `Assigner ${i + 1}`} size="sm" />
+                                                        <span className="font-medium text-zinc-900">
+                                                            {assigner.assigner_name || `Assigner ${i + 1}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm">
+                                                        <span className="text-zinc-500">{assigner.total_assigned} assigned</span>
+                                                        <Badge variant={assigner.approval_rate >= 70 ? 'approved' : assigner.approval_rate >= 40 ? 'working' : 'pending'}>
+                                                            {Math.round(assigner.approval_rate)}% approved
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="h-6 bg-zinc-100 rounded-lg overflow-hidden flex">
+                                                    <div
+                                                        className="h-full bg-purple-500 transition-all duration-500"
+                                                        style={{ width: `${approvedWidth}%` }}
+                                                    />
+                                                    <div
+                                                        className="h-full bg-blue-400 transition-all duration-500"
+                                                        style={{ width: `${pendingWidth}%` }}
+                                                    />
+                                                    <div
+                                                        className="h-full bg-zinc-300 transition-all duration-500"
+                                                        style={{ width: `${inProgressWidth}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Designer Performance Table with Names */}
+                <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <Users className="w-5 h-5 text-blue-500" />
+                                <h3 className="font-semibold text-zinc-900">Designer Details</h3>
                             </div>
                         </div>
 
@@ -213,62 +382,88 @@ export default function AnalyticsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-zinc-50">
-                                        {designersPerformance.map((designer, i) => {
-                                            // Handle rate - if > 1, it's already a percentage
-                                            const ratePercent = designer.completion_rate > 1
-                                                ? designer.completion_rate
-                                                : designer.completion_rate * 100
-                                            const rateDecimal = ratePercent / 100
+                                        {designersPerformance
+                                            .filter(d => d.designer_id !== 'unassigned')
+                                            .map((designer, i) => {
+                                                const ratePercent = designer.completion_rate > 1
+                                                    ? designer.completion_rate
+                                                    : designer.completion_rate * 100
 
-                                            return (
-                                                <tr
-                                                    key={designer.designer_id}
-                                                    className="hover:bg-zinc-50/50 transition animate-fade-in"
-                                                    style={{ animationDelay: `${i * 30}ms` }}
-                                                >
-                                                    <td className="py-4 px-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <Avatar name={`Designer ${i + 1}`} size="sm" />
-                                                            <span className="font-medium text-zinc-900">
-                                                                Designer {i + 1}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-center text-zinc-700">
-                                                        {designer.total}
-                                                    </td>
-                                                    <td className="py-4 px-4 text-center">
-                                                        <span className="text-emerald-600 font-medium">{designer.completed}</span>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-center">
-                                                        <span className="text-amber-600">{designer.pending}</span>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-center">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <div className="w-16 h-2 bg-zinc-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={cn(
-                                                                        'h-full rounded-full transition-all',
-                                                                        ratePercent >= 70 ? 'bg-emerald-500' :
-                                                                            ratePercent >= 40 ? 'bg-amber-500' : 'bg-red-500'
-                                                                    )}
-                                                                    style={{ width: `${Math.min(ratePercent, 100)}%` }}
-                                                                />
+                                                return (
+                                                    <tr
+                                                        key={designer.designer_id}
+                                                        className="hover:bg-zinc-50/50 transition animate-fade-in"
+                                                        style={{ animationDelay: `${i * 30}ms` }}
+                                                    >
+                                                        <td className="py-4 px-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar name={designer.designer_name || `Designer ${i + 1}`} size="sm" />
+                                                                <span className="font-medium text-zinc-900">
+                                                                    {designer.designer_name || `Designer ${i + 1}`}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-sm font-medium text-zinc-700">
-                                                                {Math.round(ratePercent)}%
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center text-zinc-700">
+                                                            {designer.total}
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center">
+                                                            <span className="text-emerald-600 font-medium">{designer.completed}</span>
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center">
+                                                            <span className="text-amber-600">{designer.pending}</span>
+                                                        </td>
+                                                        <td className="py-4 px-4 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className="w-16 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={cn(
+                                                                            'h-full rounded-full transition-all',
+                                                                            ratePercent >= 70 ? 'bg-emerald-500' :
+                                                                                ratePercent >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                                                                        )}
+                                                                        style={{ width: `${Math.min(ratePercent, 100)}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-sm font-medium text-zinc-700">
+                                                                    {Math.round(ratePercent)}%
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
                                     </tbody>
                                 </table>
                             </div>
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Overloaded Designers */}
+                {designerLoad.length > 0 && (
+                    <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Zap className="w-5 h-5 text-amber-500" />
+                                <h3 className="font-semibold text-zinc-900">Overloaded Designers</h3>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {designerLoad.map((designer, index) => (
+                                    <div
+                                        key={designer.designer_id}
+                                        className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-100"
+                                    >
+                                        <Avatar name={`Designer ${index + 1}`} size="sm" />
+                                        <span className="text-sm font-medium text-zinc-700">
+                                            Designer {index + 1}
+                                        </span>
+                                        <Badge variant="working">{designer.active_tasks} tasks</Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </main>
         </>
     )
@@ -277,11 +472,13 @@ export default function AnalyticsPage() {
 function StatCard({
     title,
     value,
+    subtitle,
     icon,
     color,
 }: {
     title: string
     value: number | string
+    subtitle?: string
     icon: React.ReactNode
     color: 'emerald' | 'blue' | 'amber' | 'purple'
 }) {
@@ -301,7 +498,8 @@ function StatCard({
                         {icon}
                     </div>
                 </div>
-                <span className="text-3xl font-bold text-zinc-900">{value}</span>
+                <span className="text-2xl font-bold text-zinc-900 block truncate">{value}</span>
+                {subtitle && <span className="text-xs text-zinc-500">{subtitle}</span>}
             </CardContent>
         </Card>
     )

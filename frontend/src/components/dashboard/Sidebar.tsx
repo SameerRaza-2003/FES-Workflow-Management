@@ -23,6 +23,7 @@ interface NavItem {
   icon: React.ReactNode
   adminOnly?: boolean
   designerOnly?: boolean
+  approverAllowed?: boolean  // If true, approvers can also see this item
 }
 
 const navItems: NavItem[] = [
@@ -47,7 +48,8 @@ const navItems: NavItem[] = [
     label: 'Approvals',
     href: '/dashboard/approvals',
     icon: <FileCheck className="w-5 h-5" />,
-    adminOnly: true
+    adminOnly: true,
+    approverAllowed: true  // Approvers can also see this
   },
   {
     label: 'Analytics',
@@ -65,16 +67,18 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { user, logout, isAdmin, isDesigner } = useAuth()
+  const { user, logout, isAdmin, isDesigner, isApprover } = useAuth()
   const { showToast } = useToast()
 
   // Filter nav items based on role
   const filteredNavItems = navItems.filter(item => {
+    // Approver-allowed items can be seen by approvers even if adminOnly
+    if (item.adminOnly && item.approverAllowed && isApprover) return true
     if (item.adminOnly && !isAdmin) return false
     if (item.designerOnly && !isDesigner) return false
     // If both adminOnly items and designerOnly items for tasks, show appropriate one
     if (item.label === 'All Tasks' && isDesigner) return false
-    if (item.label === 'My Tasks' && isAdmin) return false
+    if (item.label === 'My Tasks' && (isAdmin || isApprover)) return false
     return true
   })
 
