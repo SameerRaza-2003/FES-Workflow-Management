@@ -13,7 +13,8 @@ import {
   Bell,
   LogOut,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Send
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +32,12 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: <LayoutDashboard className="w-5 h-5" />
+  },
+  {
+    label: 'Posting',
+    href: '/dashboard/posting',
+    icon: <Send className="w-5 h-5" />,
+    adminOnly: true
   },
   {
     label: 'My Tasks',
