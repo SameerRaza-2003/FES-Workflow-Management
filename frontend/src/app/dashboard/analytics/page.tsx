@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import TopBar from '@/components/dashboard/TopBar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/Badge'
@@ -35,9 +35,14 @@ import {
     UserCheck,
     Award,
     Zap,
+    Sparkles,
+    Loader2,
+    Calendar,
+    ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { generateAnalyticsInsights } from '@/lib/ai'
 
 export default function AnalyticsPage() {
     const { isAdmin, isDesigner } = useAuth()
@@ -52,17 +57,52 @@ export default function AnalyticsPage() {
     const [stuckTasks, setStuckTasks] = useState<TaskRisk[]>([])
     const [designerLoad, setDesignerLoad] = useState<DesignerLoad[]>([])
 
-    useEffect(() => {
-        loadData()
-    }, [isAdmin, isDesigner])
+    // Date filter state
+    const [datePreset, setDatePreset] = useState<string>('all')
+    const [startDate, setStartDate] = useState<string>('')
+    const [endDate, setEndDate] = useState<string>('')
+    const [showCustom, setShowCustom] = useState(false)
 
-    const loadData = async () => {
+    const applyPreset = (preset: string) => {
+        setDatePreset(preset)
+        setShowCustom(false)
+        const now = new Date()
+        let sd = ''
+        let ed = ''
+        if (preset === 'this_month') {
+            sd = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+            ed = now.toISOString().slice(0, 10)
+        } else if (preset === 'last_month') {
+            const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            const last = new Date(now.getFullYear(), now.getMonth(), 0)
+            sd = first.toISOString().slice(0, 10)
+            ed = last.toISOString().slice(0, 10)
+        } else if (preset === '7days') {
+            const d = new Date(now)
+            d.setDate(d.getDate() - 7)
+            sd = d.toISOString().slice(0, 10)
+            ed = now.toISOString().slice(0, 10)
+        } else if (preset === 'custom') {
+            setShowCustom(true)
+            return
+        } else {
+            // all
+            sd = ''
+            ed = ''
+        }
+        setStartDate(sd)
+        setEndDate(ed)
+    }
+
+    const loadData = useCallback(async () => {
         setLoading(true)
         try {
             if (isAdmin) {
+                const sd = startDate || undefined
+                const ed = endDate || undefined
                 const [perf, assignerPerf, overdue, atRisk, stuck, load] = await Promise.all([
-                    getAllDesignersPerformance(),
-                    getAllAssignersPerformance(),
+                    getAllDesignersPerformance(sd, ed),
+                    getAllAssignersPerformance(sd, ed),
                     getOverdueTasks(),
                     getAtRiskTasks(3),
                     getStuckTasks(5),
@@ -84,7 +124,11 @@ export default function AnalyticsPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [isAdmin, isDesigner, startDate, endDate])
+
+    useEffect(() => {
+        loadData()
+    }, [loadData])
 
     // Calculate totals for summary stats
     const totalTasks = designersPerformance.reduce((sum, d) => sum + d.total, 0)
@@ -93,6 +137,60 @@ export default function AnalyticsPage() {
 
     const topDesigner = [...designersPerformance].sort((a, b) => b.completion_rate - a.completion_rate)[0]
     const topAssigner = [...assignersPerformance].sort((a, b) => b.approval_rate - a.approval_rate)[0]
+
+    // AI Insights — cached in localStorage so we don't burn tokens on refresh
+    const [aiInsights, setAiInsights] = useState('')
+    const [loadingInsights, setLoadingInsights] = useState(false)
+
+    useEffect(() => {
+        if (!loading && isAdmin && totalTasks > 0) {
+            // Build a fingerprint of the current data
+            const fingerprint = JSON.stringify({
+                totalTasks,
+                totalCompleted,
+                overallCompletionRate,
+                overdue: overdueTasks.length,
+                atRisk: atRiskTasks.length,
+                topDesigner: topDesigner?.designer_name || '',
+                designers: designersPerformance.length,
+                dateRange: `${startDate}_${endDate}`,
+            })
+
+            const cacheKey = 'ai_insights_cache'
+            try {
+                const cached = localStorage.getItem(cacheKey)
+                if (cached) {
+                    const parsed = JSON.parse(cached)
+                    if (parsed.fingerprint === fingerprint) {
+                        // Same data — reuse cached insights, skip API call
+                        setAiInsights(parsed.insights)
+                        return
+                    }
+                }
+            } catch { /* ignore parse errors */ }
+
+            setLoadingInsights(true)
+            generateAnalyticsInsights({
+                total_tasks: totalTasks,
+                completed_tasks: totalCompleted,
+                completion_rate: overallCompletionRate,
+                overdue_count: overdueTasks.length,
+                at_risk_count: atRiskTasks.length,
+                top_designer: topDesigner?.designer_name,
+                top_designer_completed: topDesigner?.completed || 0,
+                designers_count: designersPerformance.length,
+            })
+                .then((insights) => {
+                    setAiInsights(insights)
+                    // Cache the result
+                    try {
+                        localStorage.setItem(cacheKey, JSON.stringify({ fingerprint, insights }))
+                    } catch { /* storage full — ignore */ }
+                })
+                .catch(() => setAiInsights(''))
+                .finally(() => setLoadingInsights(false))
+        }
+    }, [loading, isAdmin, totalTasks, totalCompleted, overdueTasks.length, startDate, endDate])
 
     // Designer view
     if (isDesigner && !isAdmin) {
@@ -145,6 +243,57 @@ export default function AnalyticsPage() {
             <TopBar title="Analytics" subtitle="Performance insights & comparisons" />
 
             <main className="px-6 lg:px-10 py-8 space-y-8">
+                {/* Date Range Filter */}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm text-zinc-500">
+                        <Calendar className="w-4 h-4" />
+                        <span className="font-medium">Period:</span>
+                    </div>
+                    {[
+                        { id: 'all', label: 'All Time' },
+                        { id: 'this_month', label: 'This Month' },
+                        { id: 'last_month', label: 'Last Month' },
+                        { id: '7days', label: 'Last 7 Days' },
+                        { id: 'custom', label: 'Custom' },
+                    ].map((preset) => (
+                        <button
+                            key={preset.id}
+                            onClick={() => applyPreset(preset.id)}
+                            className={cn(
+                                'px-3 py-1.5 text-xs font-medium rounded-full transition-all',
+                                datePreset === preset.id
+                                    ? 'bg-emerald-500 text-white shadow-sm'
+                                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                            )}
+                        >
+                            {preset.label}
+                        </button>
+                    ))}
+                    {showCustom && (
+                        <div className="flex items-center gap-2 ml-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                className="px-2 py-1 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                            />
+                            <span className="text-xs text-zinc-400">to</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                className="px-2 py-1 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                            />
+                            <button
+                                onClick={() => loadData()}
+                                className="px-3 py-1 text-xs font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                            >
+                                Apply
+                            </button>
+                        </div>
+                    )}
+                </div>
+
                 {/* Summary KPIs */}
                 {loading ? (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -178,6 +327,39 @@ export default function AnalyticsPage() {
                             color="purple"
                         />
                     </div>
+                )}
+
+                {/* AI Insights Card */}
+                {!loading && (aiInsights || loadingInsights) && (
+                    <Card className="rounded-2xl border-purple-200/50 shadow-soft bg-gradient-to-r from-purple-50/50 to-indigo-50/50">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-purple-700 mb-4">
+                                <Sparkles className="w-5 h-5" />
+                                AI Insights
+                            </div>
+                            {loadingInsights ? (
+                                <div className="flex items-center gap-2 text-sm text-purple-500">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Analyzing your data...
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {aiInsights.split('\n\n').filter(Boolean).map((paragraph, i) => {
+                                        const firstChar = Array.from(paragraph)[0] || ''
+                                        const isEmoji = firstChar && !/[a-zA-Z0-9]/.test(firstChar)
+                                        return (
+                                            <div key={i} className="flex gap-3 items-start bg-white/60 rounded-xl p-3">
+                                                <span className="text-lg leading-none mt-0.5">{isEmoji ? firstChar : '💡'}</span>
+                                                <p className="text-sm text-zinc-700 leading-relaxed">
+                                                    {isEmoji ? paragraph.slice(firstChar.length).trimStart() : paragraph}
+                                                </p>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Bottleneck Alerts */}

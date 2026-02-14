@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     META_APP_SECRET: str
     META_REDIRECT_URI: str
 
+    # OpenAI (for AI features)
+    OPENAI_API_KEY: Optional[str] = None
+
     # LinkedIn (optional until you enable it)
     LINKEDIN_CLIENT_ID: Optional[str] = None
     LINKEDIN_CLIENT_SECRET: Optional[str] = None

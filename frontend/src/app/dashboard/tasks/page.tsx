@@ -20,8 +20,10 @@ import {
   X,
   Upload,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { uploadImage } from '@/lib/upload'
+import { generateTaskDescription } from '@/lib/ai'
 
 const DESIGN_FILTERS = [
   { id: 'All', label: 'All' },
@@ -55,8 +57,36 @@ export default function TasksPage() {
   })
   const [creating, setCreating] = useState(false)
   const [refImages, setRefImages] = useState<string[]>([])
-  const [uploadingRef, setUploadingRef] = useState(false)
-  const refFileRef = useRef<HTMLInputElement>(null)
+  const [refImageUploading, setRefImageUploading] = useState(false)
+  const refFileInputRef = useRef<HTMLInputElement>(null)
+
+  // AI state
+  const [generatingAi, setGeneratingAi] = useState(false)
+
+  const handleAiGenerate = async () => {
+    if (!newTask.title.trim()) {
+      showToast('error', 'Enter a title first to generate with AI')
+      return
+    }
+    setGeneratingAi(true)
+    try {
+      const result = await generateTaskDescription({
+        title: newTask.title,
+        content_type: newTask.content_type || '',
+        brand: (newTask.content_for as string) || 'FES',
+      })
+      setNewTask(prev => ({
+        ...prev,
+        content: result.description,
+        instructions: result.instructions,
+      }))
+      showToast('success', 'Description generated!')
+    } catch (err: any) {
+      showToast('error', err.response?.data?.detail || 'AI generation failed')
+    } finally {
+      setGeneratingAi(false)
+    }
+  }
 
   useEffect(() => {
     loadTasks()
@@ -325,6 +355,23 @@ export default function TasksPage() {
             </div>
           </div>
 
+          {/* AI Generate Button */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleAiGenerate}
+              disabled={generatingAi || !newTask.title.trim()}
+              className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {generatingAi ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {generatingAi ? 'Generating...' : '✨ Generate with AI'}
+            </button>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1.5">
               Content / Copy
@@ -357,33 +404,33 @@ export default function TasksPage() {
               Reference Images
             </label>
             <div
-              onClick={() => !uploadingRef && refFileRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${uploadingRef
+              onClick={() => !refImageUploading && refFileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${refImageUploading
                 ? 'border-emerald-300 bg-emerald-50/50 cursor-wait'
                 : 'border-zinc-200 hover:border-emerald-400 hover:bg-emerald-50/30'
                 }`}
             >
               <input
-                ref={refFileRef}
+                ref={refFileInputRef}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (!file) return
-                  setUploadingRef(true)
+                  setRefImageUploading(true)
                   try {
                     const result = await uploadImage(file)
                     setRefImages(prev => [...prev, result.url])
                   } catch {
                     showToast('error', 'Image upload failed')
                   } finally {
-                    setUploadingRef(false)
-                    if (refFileRef.current) refFileRef.current.value = ''
+                    setRefImageUploading(false)
+                    if (refFileInputRef.current) refFileInputRef.current.value = ''
                   }
                 }}
               />
-              {uploadingRef ? (
+              {refImageUploading ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
                   <span className="text-sm text-emerald-600">Uploading...</span>

@@ -19,6 +19,7 @@ import {
     SocialPlatform,
 } from '@/lib/social'
 import { uploadImage } from '@/lib/upload'
+import { generateCaption } from '@/lib/ai'
 import {
     Instagram,
     Facebook,
@@ -32,6 +33,8 @@ import {
     Loader2,
     ExternalLink,
     Upload,
+    Sparkles,
+    Wand2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -84,6 +87,33 @@ export default function PostingPage() {
     const [uploading, setUploading] = useState(false)
     const [showUrlInput, setShowUrlInput] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // AI caption state
+    const [showAiCaption, setShowAiCaption] = useState(false)
+    const [aiTopic, setAiTopic] = useState('')
+    const [aiTone, setAiTone] = useState('professional')
+    const [generatingCaption, setGeneratingCaption] = useState(false)
+
+    const handleGenerateCaption = async () => {
+        if (!aiTopic.trim()) return
+        setGeneratingCaption(true)
+        try {
+            const result = await generateCaption({
+                brand: 'FES',
+                topic: aiTopic,
+                tone: aiTone,
+                platform: selectedPlatforms[0] || 'general',
+            })
+            setCaption(result)
+            setShowAiCaption(false)
+            setAiTopic('')
+            showToast('success', 'Caption generated!')
+        } catch (err: any) {
+            showToast('error', err.response?.data?.detail || 'Failed to generate caption')
+        } finally {
+            setGeneratingCaption(false)
+        }
+    }
 
     const loadConnections = useCallback(async () => {
         try {
@@ -417,9 +447,61 @@ export default function PostingPage() {
 
                             {/* Caption */}
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                                    Caption
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-sm font-medium text-zinc-700">
+                                        Caption
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAiCaption(!showAiCaption)}
+                                        className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-full transition-all"
+                                    >
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                        AI Caption
+                                    </button>
+                                </div>
+
+                                {/* AI Caption Form */}
+                                {showAiCaption && (
+                                    <div className="mb-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/50 rounded-xl space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-medium text-purple-700">
+                                            <Wand2 className="w-4 h-4" />
+                                            Generate Caption with AI
+                                        </div>
+                                        <input
+                                            value={aiTopic}
+                                            onChange={e => setAiTopic(e.target.value)}
+                                            placeholder="What's the post about? e.g. Summer sale, New product launch..."
+                                            className="w-full px-3 py-2 border border-purple-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                                        />
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={aiTone}
+                                                onChange={e => setAiTone(e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-purple-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 bg-white"
+                                            >
+                                                <option value="professional">Professional</option>
+                                                <option value="casual">Casual</option>
+                                                <option value="witty">Witty</option>
+                                                <option value="inspirational">Inspirational</option>
+                                                <option value="promotional">Promotional</option>
+                                            </select>
+                                            <Button
+                                                onClick={handleGenerateCaption}
+                                                disabled={!aiTopic.trim() || generatingCaption}
+                                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                            >
+                                                {generatingCaption ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                                                ) : (
+                                                    <Sparkles className="w-4 h-4 mr-1" />
+                                                )}
+                                                Generate
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <textarea
                                     value={caption}
                                     onChange={e => setCaption(e.target.value)}

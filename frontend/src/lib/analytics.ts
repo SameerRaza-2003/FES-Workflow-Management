@@ -44,13 +44,17 @@ export interface DesignerLoad {
 
 // ============= Performance APIs =============
 
-export async function getAllDesignersPerformance(): Promise<DesignerPerformance[]> {
-    const { data } = await api.get('/analytics/performance/designers')
+export async function getAllDesignersPerformance(startDate?: string, endDate?: string): Promise<DesignerPerformance[]> {
+    const { data } = await api.get('/analytics/performance/designers', {
+        params: { start_date: startDate, end_date: endDate },
+    })
     return data
 }
 
-export async function getAllAssignersPerformance(): Promise<AssignerPerformance[]> {
-    const { data } = await api.get('/analytics/performance/assigners')
+export async function getAllAssignersPerformance(startDate?: string, endDate?: string): Promise<AssignerPerformance[]> {
+    const { data } = await api.get('/analytics/performance/assigners', {
+        params: { start_date: startDate, end_date: endDate },
+    })
     return data
 }
 

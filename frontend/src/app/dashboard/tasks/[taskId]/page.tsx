@@ -44,10 +44,12 @@ import {
     Image as ImageIcon,
     Loader2,
     X,
+    Sparkles,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { uploadImage } from '@/lib/upload'
+import { summarizeComments } from '@/lib/ai'
 
 export default function TaskDetailPage() {
     const params = useParams()
@@ -67,6 +69,29 @@ export default function TaskDetailPage() {
     const [newComment, setNewComment] = useState('')
     const [submitting, setSubmitting] = useState(false)
 
+    // AI summary state
+    const [aiSummary, setAiSummary] = useState('')
+    const [summarizing, setSummarizing] = useState(false)
+
+    const handleSummarize = async () => {
+        if (comments.length < 2) return
+        setSummarizing(true)
+        try {
+            const result = await summarizeComments({
+                comments: comments.map(c => ({
+                    author: c.author_name || c.author_id,
+                    role: c.author_role,
+                    content: c.content,
+                })),
+                task_title: task?.title || '',
+            })
+            setAiSummary(result)
+        } catch (err: any) {
+            setAiSummary('')
+        } finally {
+            setSummarizing(false)
+        }
+    }
     const [showChangesModal, setShowChangesModal] = useState(false)
     const [changesComment, setChangesComment] = useState('')
 
@@ -483,6 +508,32 @@ export default function TaskDetailPage() {
                     {activeTab === 'comments' && (
                         <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
                             <CardContent className="p-6">
+                                {/* AI Summary */}
+                                {comments.length >= 2 && (
+                                    <div className="mb-4">
+                                        <button
+                                            onClick={handleSummarize}
+                                            disabled={summarizing}
+                                            className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-full transition-all mb-3"
+                                        >
+                                            {summarizing ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="w-3.5 h-3.5" />
+                                            )}
+                                            {summarizing ? 'Summarizing...' : '✨ Summarize'}
+                                        </button>
+                                        {aiSummary && (
+                                            <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/50 rounded-xl mb-4">
+                                                <div className="flex items-center gap-2 text-sm font-medium text-purple-700 mb-2">
+                                                    <Sparkles className="w-4 h-4" />
+                                                    AI Summary
+                                                </div>
+                                                <div className="text-sm text-zinc-700 whitespace-pre-wrap">{aiSummary}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="space-y-4 mb-6">
                                     {comments.length === 0 ? (
                                         <p className="text-zinc-500 text-center py-8">No comments yet</p>

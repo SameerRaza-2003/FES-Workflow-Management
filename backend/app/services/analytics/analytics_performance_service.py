@@ -1,6 +1,8 @@
 from bson import ObjectId
 from fastapi import HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from datetime import datetime
+from typing import Optional
 
 from app.models.task import DesignStatus, ApprovalStatus
 
@@ -39,24 +41,26 @@ class AnalyticsPerformanceService:
 
     # ---------------- ADMIN ----------------
 
-    async def performance_by_designer(self) -> list[dict]:
-        pipeline = [
-            {
-                "$group": {
-                    "_id": "$designer_id",
-                    "total": {"$sum": 1},
-                    "completed": {
-                        "$sum": {
-                            "$cond": [
-                                {"$eq": ["$design_status", DesignStatus.COMPLETED]},
-                                1,
-                                0,
-                            ]
-                        }
-                    },
-                }
+    async def performance_by_designer(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> list[dict]:
+        pipeline = []
+        date_filter = self._build_date_filter(start_date, end_date)
+        if date_filter:
+            pipeline.append({"$match": date_filter})
+        pipeline.append({
+            "$group": {
+                "_id": "$designer_id",
+                "total": {"$sum": 1},
+                "completed": {
+                    "$sum": {
+                        "$cond": [
+                            {"$eq": ["$design_status", DesignStatus.COMPLETED]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
             }
-        ]
+        })
 
         raw_results = []
         designer_ids = []
@@ -90,10 +94,13 @@ class AnalyticsPerformanceService:
 
         return results
 
-    async def performance_by_assigner(self) -> list[dict]:
+    async def performance_by_assigner(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> list[dict]:
         """Get performance metrics grouped by who assigned the tasks"""
-        pipeline = [
-            {
+        pipeline = []
+        date_filter = self._build_date_filter(start_date, end_date)
+        if date_filter:
+            pipeline.append({"$match": date_filter})
+        pipeline.append({
                 "$group": {
                     "_id": "$assigned_by_id",
                     "total_assigned": {"$sum": 1},
@@ -134,8 +141,7 @@ class AnalyticsPerformanceService:
                         }
                     },
                 }
-            }
-        ]
+        })
 
         raw_results = []
         assigner_ids = []
@@ -203,3 +209,21 @@ class AnalyticsPerformanceService:
             if total > 0
             else 0.0,
         }
+
+    @staticmethod
+    def _build_date_filter(start_date: Optional[str], end_date: Optional[str]) -> dict:
+        """Build a MongoDB date range filter on created_at."""
+        if not start_date and not end_date:
+            return {}
+        date_filter: dict = {}
+        try:
+            if start_date:
+                date_filter["$gte"] = datetime.fromisoformat(start_date)
+            if end_date:
+                # End of day
+                end_dt = datetime.fromisoformat(end_date)
+                end_dt = end_dt.replace(hour=23, minute=59, second=59)
+                date_filter["$lte"] = end_dt
+        except ValueError:
+            return {}
+        return {"created_at": date_filter} if date_filter else {}

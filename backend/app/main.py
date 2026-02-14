@@ -14,6 +14,7 @@ from app.routers import analytics_bottleneck
 from app.routers import users
 from app.routers import social
 from app.routers import upload
+from app.routers import ai
 
 app = FastAPI(title="Workflow Management System")
 
@@ -42,6 +43,7 @@ app.include_router(analytics_bottleneck.router)
 app.include_router(users.router)
 app.include_router(social.router)
 app.include_router(upload.router)
+app.include_router(ai.router)
 
 @app.get("/")
 def health():
