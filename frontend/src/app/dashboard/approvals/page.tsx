@@ -27,6 +27,8 @@ import {
     Calendar,
     Clock,
     Flame,
+    Image as ImageIcon,
+    X,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -42,6 +44,7 @@ export default function ApprovalsPage() {
     const [showChangesModal, setShowChangesModal] = useState(false)
     const [changesComment, setChangesComment] = useState('')
     const [processing, setProcessing] = useState<string | null>(null)
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     useEffect(() => {
         loadTasks()
@@ -232,6 +235,17 @@ export default function ApprovalsPage() {
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 lg:flex-shrink-0">
+                                            {task.designer_uploads && task.designer_uploads.length > 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setPreviewImage(task.designer_uploads[task.designer_uploads.length - 1].url)}
+                                                    className="gap-2 rounded-xl text-purple-600 border-purple-200 hover:bg-purple-50"
+                                                    title="Preview designer upload"
+                                                >
+                                                    <ImageIcon className="w-4 h-4" />
+                                                    Preview
+                                                </Button>
+                                            )}
                                             <Link href={`/dashboard/tasks/${task.id}`}>
                                                 <Button variant="outline" className="gap-2 rounded-xl">
                                                     <Eye className="w-4 h-4" />
@@ -304,6 +318,28 @@ export default function ApprovalsPage() {
                     </Button>
                 </ModalFooter>
             </Modal>
+
+            {/* Image Preview Lightbox */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div className="relative max-w-3xl max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute -top-3 -right-3 p-1.5 bg-white rounded-full shadow-lg text-zinc-600 hover:text-zinc-900 z-10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Preview"
+                            className="max-w-full max-h-[85vh] rounded-xl object-contain"
+                        />
+                    </div>
+                </div>
+            )}
         </>
     )
 }

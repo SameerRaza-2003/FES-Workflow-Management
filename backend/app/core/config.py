@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     MONGO_URI: str
     DB_NAME: str
 
+    FRONTEND_BASE_URL: str = "http://localhost:3000"
+
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+
     # Meta (Facebook / Instagram)
     META_APP_ID: str
     META_APP_SECRET: str
@@ -23,6 +30,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        extra = "forbid"
+        extra = "ignore"
 
 settings = Settings()

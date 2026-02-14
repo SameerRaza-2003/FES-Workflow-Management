@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TopBar from '@/components/dashboard/TopBar'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,6 +21,7 @@ import {
     addTaskComment,
     startTask,
     completeTask,
+    uploadToTask,
     adminApproveTask,
     adminRequestChanges,
     finalApproveTask,
@@ -39,9 +40,14 @@ import {
     XCircle,
     Clock,
     Send,
+    Upload,
+    Image as ImageIcon,
+    Loader2,
+    X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { uploadImage } from '@/lib/upload'
 
 export default function TaskDetailPage() {
     const params = useParams()
@@ -63,6 +69,15 @@ export default function TaskDetailPage() {
 
     const [showChangesModal, setShowChangesModal] = useState(false)
     const [changesComment, setChangesComment] = useState('')
+
+    // Designer upload state
+    const [showCompleteModal, setShowCompleteModal] = useState(false)
+    const [designerUploadUrl, setDesignerUploadUrl] = useState('')
+    const [uploadingDesignerImage, setUploadingDesignerImage] = useState(false)
+    const designerFileRef = useRef<HTMLInputElement>(null)
+
+    // Image preview lightbox
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     useEffect(() => {
         loadTask()
@@ -114,14 +129,49 @@ export default function TaskDetailPage() {
         }
     }
 
-    const handleCompleteTask = async () => {
+    const handleCompleteTask = async (uploadUrl?: string) => {
         try {
-            const updated = await completeTask(taskId)
+            const updated = await completeTask(taskId, uploadUrl || undefined)
             setTask(updated)
+            setShowCompleteModal(false)
+            setDesignerUploadUrl('')
             showToast('success', 'Task marked as complete')
             loadTask()
         } catch (err) {
             showToast('error', 'Failed to complete task')
+        }
+    }
+
+    const handleDesignerFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploadingDesignerImage(true)
+        try {
+            const result = await uploadImage(file)
+            setDesignerUploadUrl(result.url)
+        } catch (err) {
+            showToast('error', 'Image upload failed')
+        } finally {
+            setUploadingDesignerImage(false)
+            if (designerFileRef.current) designerFileRef.current.value = ''
+        }
+    }
+
+    const handleStandaloneUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploadingDesignerImage(true)
+        try {
+            const result = await uploadImage(file)
+            const updated = await uploadToTask(taskId, result.url)
+            setTask(updated)
+            showToast('success', 'Image uploaded successfully')
+            loadTask()
+        } catch (err) {
+            showToast('error', 'Upload failed')
+        } finally {
+            setUploadingDesignerImage(false)
+            if (designerFileRef.current) designerFileRef.current.value = ''
         }
     }
 
@@ -243,7 +293,7 @@ export default function TaskDetailPage() {
                                 </Button>
                             )}
                             {canComplete && (
-                                <Button onClick={handleCompleteTask} className="gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600">
+                                <Button onClick={() => setShowCompleteModal(true)} className="gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600">
                                     <CheckCircle2 className="w-4 h-4" />
                                     Mark Complete
                                 </Button>
@@ -379,6 +429,52 @@ export default function TaskDetailPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Reference Images */}
+                                {task.reference_images && task.reference_images.length > 0 && (
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Reference Images</label>
+                                        <div className="flex flex-wrap gap-3 mt-2">
+                                            {task.reference_images.map((url, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setPreviewImage(url)}
+                                                    className="rounded-lg overflow-hidden border border-zinc-200 w-24 h-24 hover:ring-2 hover:ring-emerald-400 transition-all"
+                                                >
+                                                    <img src={url} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Designer Uploads History */}
+                                {task.designer_uploads && task.designer_uploads.length > 0 && (
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Designer Uploads</label>
+                                        <div className="mt-2 space-y-3">
+                                            {[...task.designer_uploads].reverse().map((upload, i) => (
+                                                <div key={i} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-xl">
+                                                    <button
+                                                        onClick={() => setPreviewImage(upload.url)}
+                                                        className="w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 flex-shrink-0 hover:ring-2 hover:ring-emerald-400 transition-all"
+                                                    >
+                                                        <img src={upload.url} alt={`Rev ${upload.revision}`} className="w-full h-full object-cover" />
+                                                    </button>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-zinc-900">Revision {upload.revision}</p>
+                                                        <p className="text-xs text-zinc-500">
+                                                            {new Date(upload.uploaded_at).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <Badge variant={i === 0 ? 'completed' : 'default'} className="flex-shrink-0">
+                                                        {i === 0 ? 'Latest' : `Rev ${upload.revision}`}
+                                                    </Badge>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     )}
@@ -503,6 +599,92 @@ export default function TaskDetailPage() {
                     </Button>
                 </ModalFooter>
             </Modal>
+
+            {/* Designer Complete + Upload Modal */}
+            <Modal
+                isOpen={showCompleteModal}
+                onClose={() => { setShowCompleteModal(false); setDesignerUploadUrl('') }}
+                title="Complete Task"
+                description="Optionally upload your finished work before marking complete."
+            >
+                <div className="space-y-4">
+                    <div
+                        onClick={() => !uploadingDesignerImage && designerFileRef.current?.click()}
+                        className={cn(
+                            "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
+                            uploadingDesignerImage
+                                ? "border-emerald-300 bg-emerald-50/50 cursor-wait"
+                                : "border-zinc-200 hover:border-emerald-400 hover:bg-emerald-50/30"
+                        )}
+                    >
+                        <input
+                            ref={designerFileRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={handleDesignerFileSelect}
+                        />
+                        {uploadingDesignerImage ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                                <p className="text-sm text-emerald-600 font-medium">Uploading...</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-zinc-400" />
+                                <p className="text-sm text-zinc-500">Click to upload your work (optional)</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {designerUploadUrl && (
+                        <div className="relative rounded-lg overflow-hidden border border-zinc-200 w-full max-w-[200px] h-[200px] mx-auto group">
+                            <img src={designerUploadUrl} alt="Upload preview" className="w-full h-full object-cover" />
+                            <button
+                                onClick={() => setDesignerUploadUrl('')}
+                                className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <ModalFooter>
+                    <Button variant="outline" onClick={() => { setShowCompleteModal(false); setDesignerUploadUrl('') }} className="rounded-xl">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => handleCompleteTask(designerUploadUrl || undefined)}
+                        disabled={uploadingDesignerImage}
+                        className="rounded-xl bg-emerald-500 hover:bg-emerald-600"
+                    >
+                        {designerUploadUrl ? 'Complete with Upload' : 'Complete without Upload'}
+                    </Button>
+                </ModalFooter>
+            </Modal>
+
+            {/* Image Preview Lightbox */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div className="relative max-w-3xl max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute -top-3 -right-3 p-1.5 bg-white rounded-full shadow-lg text-zinc-600 hover:text-zinc-900 z-10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <img
+                            src={previewImage}
+                            alt="Preview"
+                            className="max-w-full max-h-[85vh] rounded-xl object-contain"
+                        />
+                    </div>
+                </div>
+            )}
         </>
     )
 }

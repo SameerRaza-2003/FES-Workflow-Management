@@ -40,6 +40,12 @@ class ContentForEntity(str, Enum):
     IELTS_BY_FES = "IELTS by FES"
 
 
+class DesignerUpload(BaseModel):
+    url: str
+    uploaded_at: datetime
+    revision: int = 1
+
+
 class TaskBase(BaseModel):
     content_type: str = Field(..., description="Content Type from Excel")
     size: Optional[str] = None
@@ -50,6 +56,7 @@ class TaskBase(BaseModel):
     tags: List[str] = []
     content_for: Optional[ContentForEntity] = None
     is_urgent: bool = False
+    reference_images: List[str] = []
 
 
 class TaskCreate(TaskBase):
@@ -65,6 +72,7 @@ class TaskUpdate(BaseModel):
     tags: Optional[List[str]] = None
     content_for: Optional[ContentForEntity] = None
     is_urgent: Optional[bool] = None
+    reference_images: Optional[List[str]] = None
 
 
 class TaskInDB(TaskBase):
@@ -76,6 +84,8 @@ class TaskInDB(TaskBase):
     design_status: DesignStatus = DesignStatus.PENDING
     approval_status: ApprovalStatus = ApprovalStatus.PENDING
     posting_status: PostingStatus = PostingStatus.DRAFT
+
+    designer_uploads: List[DesignerUpload] = []
 
     created_at: datetime
     updated_at: datetime
@@ -101,6 +111,7 @@ class TaskResponse(TaskBase):
     posting_status: PostingStatus
     
     approval_comment: Optional[str] = None
+    designer_uploads: List[DesignerUpload] = []
 
     created_at: datetime
     updated_at: datetime

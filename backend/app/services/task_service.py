@@ -213,7 +213,7 @@ class TaskService:
 
         return updated
 
-    async def complete_task(self, task_id: str, user: dict) -> dict:
+    async def complete_task(self, task_id: str, user: dict, designer_upload_url: str = None) -> dict:
         user_role = str(user.get("role", "")).lower()
         if user_role != "designer":
             raise HTTPException(
@@ -241,7 +241,23 @@ class TaskService:
         if task["approval_status"] == ApprovalStatus.CHANGES_REQUIRED:
             update_data["approval_status"] = ApprovalStatus.PENDING
             update_data["approval_comment"] = None  # Clear the old comment
-        
+
+        # Append to designer_uploads history
+        if designer_upload_url:
+            existing_uploads = task.get("designer_uploads", [])
+            revision = len(existing_uploads) + 1
+            from datetime import datetime as dt
+            new_upload = {
+                "url": designer_upload_url,
+                "uploaded_at": dt.utcnow(),
+                "revision": revision,
+            }
+            # Use $push to append atomically
+            await self.repo.collection.update_one(
+                {"_id": ObjectId(task_id)},
+                {"$push": {"designer_uploads": new_upload}},
+            )
+
         updated = await self.repo.update(
             task_id,
             update_data,

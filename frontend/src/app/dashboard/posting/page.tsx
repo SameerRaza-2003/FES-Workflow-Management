@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import TopBar from '@/components/dashboard/TopBar'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,6 +18,7 @@ import {
     SocialConnection,
     SocialPlatform,
 } from '@/lib/social'
+import { uploadImage } from '@/lib/upload'
 import {
     Instagram,
     Facebook,
@@ -30,10 +31,15 @@ import {
     X,
     Loader2,
     ExternalLink,
+    Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const PLATFORM_CONFIG: Record<SocialPlatform, { name: string, icon: React.ReactNode, color: string, bgColor: string }> = {
+/* ──────────────────────────────────────────────
+   Platform display config
+   Instagram kept here for post results rendering
+   ────────────────────────────────────────────── */
+const PLATFORM_CONFIG: Record<SocialPlatform, { name: string; icon: React.ReactNode; color: string; bgColor: string }> = {
     instagram: {
         name: 'Instagram',
         icon: <Instagram className="w-5 h-5" />,
@@ -41,7 +47,7 @@ const PLATFORM_CONFIG: Record<SocialPlatform, { name: string, icon: React.ReactN
         bgColor: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400',
     },
     facebook: {
-        name: 'Facebook',
+        name: 'Meta Account',
         icon: <Facebook className="w-5 h-5" />,
         color: 'text-blue-600',
         bgColor: 'bg-blue-600',
@@ -53,6 +59,9 @@ const PLATFORM_CONFIG: Record<SocialPlatform, { name: string, icon: React.ReactN
         bgColor: 'bg-blue-700',
     },
 }
+
+/* Only these platforms get a connect card */
+const CONNECTABLE_PLATFORMS: SocialPlatform[] = ['facebook', 'linkedin']
 
 export default function PostingPage() {
     const { isAdmin } = useAuth()
@@ -69,7 +78,12 @@ export default function PostingPage() {
     const [caption, setCaption] = useState('')
     const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([])
     const [posting, setPosting] = useState(false)
-    const [postResults, setPostResults] = useState<{ platform: SocialPlatform, success: boolean, error?: string }[] | null>(null)
+    const [postResults, setPostResults] = useState<{ platform: SocialPlatform; success: boolean; error?: string }[] | null>(null)
+
+    // Upload state
+    const [uploading, setUploading] = useState(false)
+    const [showUrlInput, setShowUrlInput] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const loadConnections = useCallback(async () => {
         try {
@@ -124,9 +138,34 @@ export default function PostingPage() {
         )
     }
 
+    /* ─── Image Upload ─── */
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        const allowed = ['image/png', 'image/jpeg', 'image/webp']
+        if (!allowed.includes(file.type)) {
+            showToast('error', 'Only PNG, JPG, and WEBP images are allowed')
+            return
+        }
+
+        setUploading(true)
+        try {
+            const result = await uploadImage(file)
+            setImageUrl(result.url)
+            showToast('success', 'Image uploaded successfully')
+        } catch (err: any) {
+            showToast('error', err.response?.data?.detail || 'Image upload failed')
+        } finally {
+            setUploading(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
+    /* ─── Post ─── */
     const handlePost = async () => {
         if (!imageUrl.trim()) {
-            showToast('error', 'Please enter an image URL')
+            showToast('error', 'Please upload or enter an image')
             return
         }
         if (!caption.trim()) {
@@ -147,17 +186,21 @@ export default function PostingPage() {
                 platforms: selectedPlatforms,
             })
 
-            setPostResults(response.results.map(r => ({
+            const results = response.results.map(r => ({
                 platform: r.platform,
                 success: r.success,
                 error: r.error_message,
-            })))
+            }))
+            setPostResults(results)
 
-            if (response.successful_count > 0) {
-                showToast('success', `Posted to ${response.successful_count} platform(s)`)
+            const successCount = results.filter(r => r.success).length
+            const failCount = results.filter(r => !r.success).length
+
+            if (successCount > 0) {
+                showToast('success', `Posted to ${successCount} platform(s)`)
             }
-            if (response.failed_count > 0) {
-                showToast('error', `Failed on ${response.failed_count} platform(s)`)
+            if (failCount > 0) {
+                showToast('error', `Failed on ${failCount} platform(s)`)
             }
         } catch (err: any) {
             showToast('error', err.response?.data?.detail || 'Failed to post')
@@ -168,7 +211,9 @@ export default function PostingPage() {
 
     const getConnection = (platform: SocialPlatform) => connections.find(c => c.platform === platform)
 
-    const connectedPlatforms = connections.map(c => c.platform)
+    const connectedPlatforms = connections
+        .map(c => c.platform)
+        .filter(p => CONNECTABLE_PLATFORMS.includes(p))
 
     if (!isAdmin) {
         return (
@@ -190,7 +235,7 @@ export default function PostingPage() {
             <TopBar title="Social Posting" subtitle="Connect accounts and publish content" />
 
             <main className="px-6 lg:px-10 py-8 space-y-8">
-                {/* Connected Accounts Section */}
+                {/* ─── Connected Accounts ─── */}
                 <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
                     <CardContent className="p-6">
                         <h2 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
@@ -199,12 +244,12 @@ export default function PostingPage() {
                         </h2>
 
                         {loading ? (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {[...Array(3)].map((_, i) => <SkeletonKPI key={i} />)}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {[...Array(2)].map((_, i) => <SkeletonKPI key={i} />)}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {(['instagram', 'facebook', 'linkedin'] as SocialPlatform[]).map(platform => {
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {CONNECTABLE_PLATFORMS.map(platform => {
                                     const config = PLATFORM_CONFIG[platform]
                                     const connection = getConnection(platform)
                                     const isConnected = !!connection
@@ -279,7 +324,7 @@ export default function PostingPage() {
                     </CardContent>
                 </Card>
 
-                {/* Create Post Section */}
+                {/* ─── Create Post ─── */}
                 <Card className="rounded-2xl border-zinc-200/50 shadow-soft">
                     <CardContent className="p-6">
                         <h2 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
@@ -288,24 +333,70 @@ export default function PostingPage() {
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Image URL */}
+                            {/* Image Upload */}
                             <div>
                                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                                    Image URL
+                                    Image
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                                        <Input
-                                            value={imageUrl}
-                                            onChange={e => setImageUrl(e.target.value)}
-                                            placeholder="https://example.com/image.jpg"
-                                            className="pl-10"
-                                        />
-                                    </div>
+
+                                {/* Upload zone */}
+                                <div
+                                    onClick={() => !uploading && fileInputRef.current?.click()}
+                                    className={cn(
+                                        "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
+                                        uploading
+                                            ? "border-emerald-300 bg-emerald-50/50 cursor-wait"
+                                            : "border-zinc-200 hover:border-emerald-400 hover:bg-emerald-50/30"
+                                    )}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        onChange={handleFileSelect}
+                                    />
+                                    {uploading ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                                            <p className="text-sm text-emerald-600 font-medium">Uploading to Cloudinary...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Upload className="w-8 h-8 text-zinc-400" />
+                                            <p className="text-sm text-zinc-500">
+                                                Click to upload <span className="font-medium">PNG, JPG, or WEBP</span>
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Manual URL fallback */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowUrlInput(!showUrlInput)}
+                                    className="mt-2 text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                                >
+                                    {showUrlInput ? 'Hide URL input' : 'Or enter image URL manually'}
+                                </button>
+
+                                {showUrlInput && (
+                                    <div className="mt-2 flex gap-2">
+                                        <div className="relative flex-1">
+                                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                            <Input
+                                                value={imageUrl}
+                                                onChange={e => setImageUrl(e.target.value)}
+                                                placeholder="https://example.com/image.jpg"
+                                                className="pl-10"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Image Preview */}
                                 {imageUrl && (
-                                    <div className="mt-2 rounded-lg overflow-hidden border border-zinc-200 w-48 h-48">
+                                    <div className="mt-3 relative rounded-lg overflow-hidden border border-zinc-200 w-48 h-48 group">
                                         <img
                                             src={imageUrl}
                                             alt="Preview"
@@ -314,6 +405,12 @@ export default function PostingPage() {
                                                 (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'
                                             }}
                                         />
+                                        <button
+                                            onClick={() => setImageUrl('')}
+                                            className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -383,7 +480,7 @@ export default function PostingPage() {
                                         >
                                             {result.success ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                                             {PLATFORM_CONFIG[result.platform].name}:
-                                            {result.success ? " Posted successfully" : ` ${result.error}`}
+                                            {result.success ? " Posted successfully" : ` ${result.error || 'Unknown error'}`}
                                         </div>
                                     ))}
                                 </div>

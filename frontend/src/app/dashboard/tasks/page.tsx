@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import TopBar from '@/components/dashboard/TopBar'
 import TaskTable from '@/components/tasks/TasksTable'
 import { getTasks, getMyTasks, Task, createTask, TaskCreate, CONTENT_FOR_OPTIONS, ContentForEntity } from '@/lib/tasks'
@@ -17,8 +17,11 @@ import {
   Search,
   Filter,
   Calendar,
-  X
+  X,
+  Upload,
+  Loader2,
 } from 'lucide-react'
+import { uploadImage } from '@/lib/upload'
 
 const DESIGN_FILTERS = [
   { id: 'All', label: 'All' },
@@ -51,6 +54,9 @@ export default function TasksPage() {
     is_urgent: false,
   })
   const [creating, setCreating] = useState(false)
+  const [refImages, setRefImages] = useState<string[]>([])
+  const [uploadingRef, setUploadingRef] = useState(false)
+  const refFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadTasks()
@@ -103,6 +109,7 @@ export default function TasksPage() {
       const created = await createTask({
         ...newTask,
         deadline: newTask.deadline ? new Date(newTask.deadline).toISOString() : undefined,
+        reference_images: refImages.length > 0 ? refImages : undefined,
       })
       setTasks((prev) => [created, ...prev])
       setShowCreateModal(false)
@@ -117,6 +124,7 @@ export default function TasksPage() {
         content_for: null,
         is_urgent: false,
       })
+      setRefImages([])
       showToast('success', 'Task created successfully')
     } catch (err) {
       console.error('Failed to create task:', err)
@@ -341,6 +349,68 @@ export default function TasksPage() {
               rows={2}
               className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none"
             />
+          </div>
+
+          {/* Reference Images */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+              Reference Images
+            </label>
+            <div
+              onClick={() => !uploadingRef && refFileRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${uploadingRef
+                ? 'border-emerald-300 bg-emerald-50/50 cursor-wait'
+                : 'border-zinc-200 hover:border-emerald-400 hover:bg-emerald-50/30'
+                }`}
+            >
+              <input
+                ref={refFileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setUploadingRef(true)
+                  try {
+                    const result = await uploadImage(file)
+                    setRefImages(prev => [...prev, result.url])
+                  } catch {
+                    showToast('error', 'Image upload failed')
+                  } finally {
+                    setUploadingRef(false)
+                    if (refFileRef.current) refFileRef.current.value = ''
+                  }
+                }}
+              />
+              {uploadingRef ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
+                  <span className="text-sm text-emerald-600">Uploading...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <Upload className="w-5 h-5 text-zinc-400" />
+                  <span className="text-sm text-zinc-500">Click to add reference images</span>
+                </div>
+              )}
+            </div>
+            {refImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {refImages.map((url, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 group">
+                    <img src={url} alt={`Ref ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setRefImages(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-0 right-0 p-0.5 bg-black/50 rounded-bl text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

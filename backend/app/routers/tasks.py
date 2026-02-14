@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, Depends, status
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
@@ -72,6 +74,7 @@ async def to_task_response(task: dict) -> TaskResponse:
         tags=task.get("tags", []),
         content_for=task.get("content_for"),
         is_urgent=task.get("is_urgent", False),
+        reference_images=task.get("reference_images", []),
         
         assigned_by_id=assigned_by_id_str,
         designer_id=designer_id_str,
@@ -86,6 +89,7 @@ async def to_task_response(task: dict) -> TaskResponse:
         posting_status=task.get("posting_status", "Draft"),
 
         approval_comment=task.get("approval_comment"),
+        designer_uploads=task.get("designer_uploads", []),
         created_at=task["created_at"],
         updated_at=task["updated_at"],
     )
@@ -101,6 +105,10 @@ class AssignDesignerRequest(BaseModel):
 
 class RequestChangesRequest(BaseModel):
     comment: str
+
+
+class CompleteTaskRequest(BaseModel):
+    designer_upload_url: str = None
 
 
 # =========================================================
@@ -251,11 +259,63 @@ async def start_task(
 )
 async def complete_task(
     task_id: str,
+    payload: CompleteTaskRequest = None,
     current_user: dict = Depends(get_current_user),
     service: TaskService = Depends(get_task_service),
 ):
-    task = await service.complete_task(task_id, current_user)
+    upload_url = payload.designer_upload_url if payload else None
+    task = await service.complete_task(task_id, current_user, designer_upload_url=upload_url)
     return await to_task_response(task)
+
+
+class DesignerUploadRequest(BaseModel):
+    url: str
+
+
+@router.post(
+    "/{task_id}/upload",
+    response_model=TaskResponse,
+    tags=["Tasks – Designer"],
+    summary="Upload an image to a task (Designer)",
+)
+async def upload_to_task(
+    task_id: str,
+    payload: DesignerUploadRequest,
+    current_user: dict = Depends(get_current_user),
+    service: TaskService = Depends(get_task_service),
+):
+    """
+    Standalone upload — designer can attach images anytime while Working
+    or after ChangesRequired (before re-completing).
+    """
+    user_role = str(current_user.get("role", "")).lower()
+    if user_role != "designer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only designers can upload to tasks",
+        )
+
+    task_doc = await service.get_task(task_id)
+
+    if task_doc.get("designer_id") != ObjectId(current_user["_id"]):
+        raise HTTPException(status_code=403, detail="Task not assigned to you")
+
+    # Append to uploads
+    existing = task_doc.get("designer_uploads", [])
+    revision = len(existing) + 1
+    new_upload = {
+        "url": payload.url,
+        "uploaded_at": datetime.utcnow(),
+        "revision": revision,
+    }
+
+    await service.repo.collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {"$push": {"designer_uploads": new_upload}},
+    )
+
+    updated = await service.get_task(task_id)
+    return await to_task_response(updated)
 
 
 # =========================================================

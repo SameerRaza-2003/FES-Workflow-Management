@@ -18,6 +18,12 @@ export const CONTENT_FOR_OPTIONS: { value: ContentForEntity; label: string }[] =
   { value: 'IELTS by FES', label: 'IELTS by FES' },
 ]
 
+export interface DesignerUpload {
+  url: string
+  uploaded_at: string
+  revision: number
+}
+
 export interface Task {
   id: string
   title: string
@@ -29,6 +35,7 @@ export interface Task {
   tags: string[]
   content_for?: ContentForEntity | null
   is_urgent: boolean
+  reference_images: string[]
 
   assigned_by_id: string
   designer_id?: string | null
@@ -42,6 +49,7 @@ export interface Task {
   posting_status: PostingStatus
 
   approval_comment?: string | null
+  designer_uploads: DesignerUpload[]
 
   created_at: string
   updated_at: string
@@ -57,6 +65,7 @@ export interface TaskCreate {
   tags?: string[]
   content_for?: ContentForEntity | null
   is_urgent?: boolean
+  reference_images?: string[]
 }
 
 export interface TaskUpdate {
@@ -67,6 +76,7 @@ export interface TaskUpdate {
   tags?: string[] | null
   content_for?: ContentForEntity | null
   is_urgent?: boolean | null
+  reference_images?: string[] | null
 }
 
 export interface TaskComment {
@@ -129,8 +139,14 @@ export async function startTask(taskId: string): Promise<Task> {
   return data
 }
 
-export async function completeTask(taskId: string): Promise<Task> {
-  const { data } = await api.post(`/tasks/${taskId}/complete`)
+export async function completeTask(taskId: string, designerUploadUrl?: string): Promise<Task> {
+  const body = designerUploadUrl ? { designer_upload_url: designerUploadUrl } : undefined
+  const { data } = await api.post(`/tasks/${taskId}/complete`, body)
+  return data
+}
+
+export async function uploadToTask(taskId: string, url: string): Promise<Task> {
+  const { data } = await api.post(`/tasks/${taskId}/upload`, { url })
   return data
 }
 
