@@ -36,6 +36,10 @@ async def my_notifications(
             task_id=str(n["task_id"]) if n.get("task_id") else None,
             is_read=n["is_read"],
             created_at=n["created_at"],
+            actor_name=n.get("actor_name"),
+            actor_role=n.get("actor_role"),
+            action=n.get("action"),
+            task_title=n.get("task_title"),
         )
         for n in notifications
     ]

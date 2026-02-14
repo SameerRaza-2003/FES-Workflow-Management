@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,11 +33,20 @@ export default function LoginPage() {
         password,
       })
 
-      // Store token (Phase 2)
-      localStorage.setItem('access_token', data.access_token)
+      // Store token and user data via AuthContext
+      // Role is normalized in AuthContext but we can also normalize here for safety
+      const userData = {
+        id: data.user_id || data.id || '',
+        email: email,
+        fullName: data.full_name || email.split('@')[0],
+        role: (data.role || 'designer').toLowerCase(),
+      }
 
-      // Redirect (dashboard placeholder)
-      router.push('/dashboard')
+      login(data.access_token, userData)
+
+      // IMPORTANT: Use window.location.href for FULL page refresh
+      // router.push causes soft navigation that doesn't re-render all components
+      window.location.href = '/dashboard'
     } catch (err) {
       setError('Invalid email or password')
     } finally {
@@ -169,8 +181,19 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* Sign In Link */}
+            <p className="text-center text-sm text-zinc-500">
+              Don't have an account?{' '}
+              <Link
+                href="/register"
+                className="text-emerald-600 font-medium hover:underline"
+              >
+                Create one
+              </Link>
+            </p>
+
             {/* Footer */}
-            <p className="text-center text-xs text-zinc-400">
+            <p className="text-center text-xs text-zinc-400 pt-2">
               © 2026 FES Education Consultancy
             </p>
 

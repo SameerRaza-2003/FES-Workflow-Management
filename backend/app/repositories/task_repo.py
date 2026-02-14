@@ -80,13 +80,26 @@ class TaskRepository:
             }
         ).limit(limit).to_list(length=limit)
 
-    async def list_pending_approval(
+    async def list_pending_admin_approval(
         self,
         limit: int = 100,
     ) -> List[dict]:
+        """Tasks completed, awaiting Admin approval (Layer 1)"""
         return await self.collection.find(
             {
                 "design_status": "Completed",
                 "approval_status": "Pending",
             }
-        ).limit(limit).to_list(length=limit)
+        ).sort([("is_urgent", -1), ("deadline", 1)]).limit(limit).to_list(length=limit)
+
+    async def list_pending_final_approval(
+        self,
+        limit: int = 100,
+    ) -> List[dict]:
+        """Tasks admin-approved, awaiting Approver final approval (Layer 2)"""
+        return await self.collection.find(
+            {
+                "approval_status": "AdminApproved",
+            }
+        ).sort([("is_urgent", -1), ("deadline", 1)]).limit(limit).to_list(length=limit)
+

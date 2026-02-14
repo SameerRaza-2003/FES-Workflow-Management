@@ -6,6 +6,7 @@ from app.core.dependencies import get_current_user
 from app.models.analytics_performance import (
     DesignerPerformance,
     MyPerformance,
+    AssignerPerformance,
 )
 from app.services.analytics.analytics_performance_service import (
     AnalyticsPerformanceService,
@@ -35,10 +36,25 @@ async def performance_all_designers(
     current_user: dict = Depends(get_current_user),
     service: AnalyticsPerformanceService = Depends(get_service),
 ):
-    if current_user.get("role") != "Admin":
+    if str(current_user.get("role", "")).lower() != "admin":
         raise PermissionError("Admins only")
 
     return await service.performance_by_designer()
+
+
+@router.get(
+    "/assigners",
+    response_model=list[AssignerPerformance],
+    summary="Performance metrics by task assigner (Admin)",
+)
+async def performance_all_assigners(
+    current_user: dict = Depends(get_current_user),
+    service: AnalyticsPerformanceService = Depends(get_service),
+):
+    if str(current_user.get("role", "")).lower() != "admin":
+        raise PermissionError("Admins only")
+
+    return await service.performance_by_assigner()
 
 
 # ---------------- DESIGNER ----------------

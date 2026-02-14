@@ -1,0 +1,170 @@
+﻿  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./src/app/(auth)/login/page.tsx
+39:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+61:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+101:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+175:18  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/(auth)/register/page.tsx
+67:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+90:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+139:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/analytics/page.tsx
+26:5  Warning: 'TrendingDown' is defined but never used.  @typescript-eslint/no-unused-vars
+51:8  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/approvals/page.tsx
+22:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+36:8  Warning: React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+57:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+78:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/import/page.tsx
+3:10  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+7:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+8:10  Warning: 'EmptyState' is defined but never used.  @typescript-eslint/no-unused-vars
+24:5  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
+77:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+97:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/notifications/page.tsx
+7:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+15:5  Warning: 'FileText' is defined but never used.  @typescript-eslint/no-unused-vars
+64:8  Warning: React Hook useEffect has a missing dependency: 'loadNotifications'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+85:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+95:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/tasks/page.tsx
+10:10  Warning: 'Tabs' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'Filter' is defined but never used.  @typescript-eslint/no-unused-vars
+19:3  Warning: 'Calendar' is defined but never used.  @typescript-eslint/no-unused-vars
+55:6  Warning: React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/tasks/[taskId]/page.tsx
+30:5  Warning: 'User' is defined but never used.  @typescript-eslint/no-unused-vars
+31:5  Warning: 'Tag' is defined but never used.  @typescript-eslint/no-unused-vars
+38:5  Warning: 'Clock' is defined but never used.  @typescript-eslint/no-unused-vars
+46:11  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+66:8  Warning: React Hook useEffect has a missing dependency: 'loadTask'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+96:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+109:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+120:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+131:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+149:18  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+264:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+431:65  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+431:81  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/dashboard/KPISection.tsx
+9:3  Warning: 'AlertCircle' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/RecentActivity.tsx
+6:10  Warning: 'Avatar' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/Sidebar.tsx
+107:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/dashboard/TaskOverview.tsx
+34:35  Warning: 'i' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/TopBar.tsx
+14:3  Warning: 'Check' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/tasks/TasksTable.tsx
+7:34  Warning: 'DropdownDivider' is defined but never used.  @typescript-eslint/no-unused-vars
+44:44  Warning: 'onUpdate' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/Avatar.tsx
+59:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/lib/dashboard.ts
+13:5  Warning: 'atRiskRes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+14:5  Warning: 'stuckRes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+27:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:11  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/import.ts
+7:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+53:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (Failed to compil   
+ e.:String) [], Remo    
+teException
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+
+./src/app/dashboard/anal
+ytics/page.tsx:351:42
+Type error: 
+'task.days_remaining' 
+is possibly 'undefined'.
+
+[0m [90m 349 |[39m   
+                        
+      {task[33m.[39mda
+ys_remaining 
+[33m!==[39m 
+[36mnull[39m 
+[33m&&[39m ([0m
+[0m [90m 350 |[39m   
+                        
+          
+[33m<[39m[33mp[39m c
+lassName[33m=[39m[32m
+"text-xs text-zinc-500"
+[39m[33m>[39m[0m
+[0m[31m[1m>[22m[39m
+[90m 351 |[39m        
+                        
+         {task[33m.[39
+mdays_remaining 
+[33m<[39m 
+[35m0[39m[0m
+[0m [90m     |[39m   
+                        
+               
+[31m[1m^[22m[39m[0m
+[0m [90m 352 |[39m   
+                        
+                  
+[33m?[39m [32m`${Math
+.abs(task.days_remaining
+)} days 
+overdue`[39m[0m
+[0m [90m 353 |[39m   
+                        
+                  
+[33m:[39m [32m`${task
+.days_remaining} days 
+left`[39m}[0m
+[0m [90m 354 |[39m   
+                        
+          [33m<[39m[3
+3m/[39m[33mp[39m[33m
+>[39m[0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null
