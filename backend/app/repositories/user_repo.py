@@ -87,3 +87,13 @@ class UserRepository:
         cursor = db.users.find({"role": role}, {"password_hash": 0, "hashed_password": 0})
         return await cursor.to_list(length=100)
 
+    @staticmethod
+    async def list_all():
+        """List all active users (for assignment dropdowns)"""
+        db = get_db()
+        cursor = db.users.find(
+            {},
+            {"password_hash": 0, "hashed_password": 0}
+        )
+        return await cursor.to_list(length=200)
+

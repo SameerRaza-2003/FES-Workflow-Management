@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 
 from app.routers import auth
 from app.routers import tasks
@@ -15,10 +16,12 @@ from app.routers import users
 from app.routers import social
 from app.routers import upload
 from app.routers import ai
+from app.routers import todo_router
+from app.routers import event_router
 
 app = FastAPI(title="Workflow Management System")
 
-# ✅ CORS CONFIG (THIS IS THE FIX)
+# ✅ CORS CONFIG
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -44,6 +47,17 @@ app.include_router(users.router)
 app.include_router(social.router)
 app.include_router(upload.router)
 app.include_router(ai.router)
+app.include_router(todo_router.router)
+app.include_router(event_router.router)
+
+
+@app.on_event("startup")
+async def start_reminder_scheduler():
+    from app.db.mongo import db
+    from app.services.reminder_service import ReminderService
+    scheduler = ReminderService(db, interval_seconds=60)
+    asyncio.create_task(scheduler.run_forever())
+
 
 @app.get("/")
 def health():

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -24,6 +26,21 @@ def get_service(
     return AnalyticsBottleneckService(db)
 
 
+def _to_risk(task: dict) -> TaskRisk:
+    """Safely convert a raw MongoDB task document to TaskRisk."""
+    deadline = task.get("deadline")
+    days_remaining = None
+    if deadline:
+        days_remaining = (deadline - datetime.utcnow()).days
+    return TaskRisk(
+        task_id=str(task["_id"]),
+        title=task.get("title", "Untitled"),
+        designer_id=str(task["designer_id"]) if task.get("designer_id") else None,
+        deadline=deadline,
+        days_remaining=days_remaining,
+    )
+
+
 # ---------------- DEADLINES ----------------
 
 @router.get(
@@ -35,7 +52,8 @@ async def overdue_tasks(
     current_user: dict = Depends(get_current_user),
     service: AnalyticsBottleneckService = Depends(get_service),
 ):
-    return await service.overdue_tasks()
+    tasks = await service.overdue_tasks()
+    return [_to_risk(t) for t in tasks]
 
 
 @router.get(
@@ -48,7 +66,8 @@ async def tasks_at_risk(
     current_user: dict = Depends(get_current_user),
     service: AnalyticsBottleneckService = Depends(get_service),
 ):
-    return await service.tasks_at_risk(days)
+    tasks = await service.tasks_at_risk(days)
+    return [_to_risk(t) for t in tasks]
 
 
 # ---------------- DESIGNER LOAD ----------------
@@ -78,4 +97,5 @@ async def stuck_tasks(
     current_user: dict = Depends(get_current_user),
     service: AnalyticsBottleneckService = Depends(get_service),
 ):
-    return await service.stuck_tasks(days)
+    tasks = await service.stuck_tasks(days)
+    return [_to_risk(t) for t in tasks]

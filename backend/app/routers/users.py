@@ -24,3 +24,22 @@ async def list_designers(current_user: dict = Depends(get_current_user)):
         })
     
     return result
+
+
+@router.get(
+    "/all",
+    summary="List all users",
+    description="Returns a list of all users. Requires authentication.",
+)
+async def list_all_users(current_user: dict = Depends(get_current_user)):
+    """Get list of all users for assignment dropdowns"""
+    users = await UserRepository.list_all()
+    return [
+        {
+            "id": str(u["_id"]),
+            "email": u.get("email", ""),
+            "full_name": u.get("full_name", u.get("email", "User")),
+            "role": u.get("role", ""),
+        }
+        for u in users
+    ]

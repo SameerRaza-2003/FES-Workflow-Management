@@ -14,7 +14,9 @@ import {
   LogOut,
   Settings,
   ChevronRight,
-  Send
+  Send,
+  ListTodo,
+  CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -65,6 +67,16 @@ const navItems: NavItem[] = [
     adminOnly: true
   },
 
+  {
+    label: 'Todos',
+    href: '/dashboard/todos',
+    icon: <ListTodo className="w-5 h-5" />
+  },
+  {
+    label: 'Calendar',
+    href: '/dashboard/calendar',
+    icon: <CalendarDays className="w-5 h-5" />
+  },
   {
     label: 'Notifications',
     href: '/dashboard/notifications',
