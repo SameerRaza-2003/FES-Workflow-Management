@@ -25,7 +25,8 @@ app = FastAPI(title="Workflow Management System")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Next.js dev
+        "https://workflow.fespak.com",
+        "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
