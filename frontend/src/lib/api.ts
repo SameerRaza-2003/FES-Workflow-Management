@@ -1,7 +1,10 @@
-import axios from 'axios'
+import axios from "axios"
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://18.206.81.37:8000"
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: API_BASE_URL,
 })
 
 /**
@@ -21,14 +24,13 @@ api.interceptors.request.use(
 )
 
 /**
- * Optional: global 401 handling (future-safe)
+ * Optional: global 401 handling
  */
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
       console.warn('Unauthorized — token may be expired')
-      // later: redirect to login if you want
     }
     return Promise.reject(error)
   }
