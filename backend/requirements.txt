@@ -30,3 +30,6 @@ cloudinary>=1.40.0
 # ─── Data Import (Excel/CSV) ───
 pandas>=2.2.0
 openpyxl>=3.1.0
+
+# ─── WhatsApp (Twilio) ───
+twilio>=9.0.0

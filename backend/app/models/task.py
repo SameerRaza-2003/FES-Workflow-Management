@@ -77,6 +77,7 @@ class TaskUpdate(BaseModel):
 
 class TaskInDB(TaskBase):
     id: ObjectId = Field(alias="_id")
+    task_number: int = 0
 
     assigned_by_id: ObjectId
     designer_id: Optional[ObjectId] = None
@@ -99,6 +100,7 @@ class TaskInDB(TaskBase):
 
 class TaskResponse(TaskBase):
     id: str
+    task_number: int = 0
     assigned_by_id: str
     designer_id: Optional[str]
     

@@ -34,7 +34,7 @@ def get_comment_service(
     task_repo = TaskRepository(db)
 
     notification_repo = NotificationRepository(db)
-    notification_service = NotificationService(notification_repo)
+    notification_service = NotificationService(notification_repo, db)
 
     return TaskCommentService(
         comment_repo,

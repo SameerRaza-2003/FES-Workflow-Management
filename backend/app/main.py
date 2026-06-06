@@ -18,6 +18,7 @@ from app.routers import upload
 from app.routers import ai
 from app.routers import todo_router
 from app.routers import event_router
+from app.routers import whatsapp
 
 app = FastAPI(title="Workflow Management System")
 
@@ -50,6 +51,7 @@ app.include_router(upload.router)
 app.include_router(ai.router)
 app.include_router(todo_router.router)
 app.include_router(event_router.router)
+app.include_router(whatsapp.router)
 
 
 @app.on_event("startup")

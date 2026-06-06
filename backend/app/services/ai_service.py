@@ -1,3 +1,5 @@
+import json
+from datetime import datetime
 from typing import List
 from openai import AsyncOpenAI
 
@@ -61,6 +63,64 @@ class AIService:
 
         raw = await self._chat(system, user)
         return self._parse_description_response(raw)
+
+    # ─── WhatsApp Task Parser (GPT-4o-mini) ─────────────────────
+
+    async def parse_whatsapp_task(self, command: str, current_state: dict = None) -> dict:
+        """
+        Parses a natural language WhatsApp command into structured task data,
+        optionally updating an existing draft state.
+        """
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        
+        state_prompt = ""
+        if current_state:
+            state_prompt = (
+                f"Here is the current drafted task state:\n{json.dumps(current_state, indent=2)}\n"
+                "Update these details based on the new command, keeping existing details that aren't overridden."
+            )
+        else:
+            state_prompt = "Extract task details from the user's natural language command."
+
+        system = (
+            "You are an intelligent assistant for a design workflow system. "
+            f"{state_prompt}\n"
+            f"Today's date is {today_date}. "
+            "Return ONLY a valid JSON object matching the requested schema. Do not wrap it in markdown code blocks.\n\n"
+            "Schema:\n"
+            "{\n"
+            '  "title": "string (the main deliverable)",\n'
+            '  "content_type": "string (e.g., Banner, Social Media Post, General)",\n'
+            '  "size": "string (e.g., 1080x1080, A4, or null)",\n'
+            '  "instructions": "string (any extra details, or null)",\n'
+            '  "deadline": "YYYY-MM-DD or null if not specified. Calculate based on today\'s date if words like \'tomorrow\' or \'next friday\' are used. If just a day of month is given, assume current or next month.",\n'
+            '  "designer_name": "string (name of the person to assign to, or null)"\n'
+            "}"
+        )
+        
+        user = f"Command: {command}\n\nExtract the JSON:"
+        
+        raw_json = await self._chat(system, user)
+        
+        # Clean up in case there's markdown formatting
+        if raw_json.startswith("```json"):
+            raw_json = raw_json[7:]
+        if raw_json.startswith("```"):
+            raw_json = raw_json[3:]
+        if raw_json.endswith("```"):
+            raw_json = raw_json[:-3]
+            
+        try:
+            return json.loads(raw_json.strip())
+        except json.JSONDecodeError:
+            # Fallback if parsing fails
+            return {
+                "title": command.strip()[:100] or "Untitled",
+                "content_type": "General",
+                "instructions": command,
+                "deadline": None,
+                "designer_name": None
+            }
 
     # ─── Comment Summarizer ──────────────────────────────────────
 

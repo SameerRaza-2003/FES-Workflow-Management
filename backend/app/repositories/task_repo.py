@@ -7,14 +7,27 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 class TaskRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db
         self.collection = db["tasks"]
+        self.counters = db["counters"]
 
     # ---------- CREATE ----------
+
+    async def _next_task_number(self) -> int:
+        """Auto-increment task number using MongoDB counters collection."""
+        result = await self.counters.find_one_and_update(
+            {"_id": "task_number"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True,
+        )
+        return result["seq"]
 
     async def create(self, data: dict) -> dict:
         now = datetime.utcnow()
         data["created_at"] = now
         data["updated_at"] = now
+        data["task_number"] = await self._next_task_number()
 
         result = await self.collection.insert_one(data)
         return await self.collection.find_one({"_id": result.inserted_id})
@@ -29,8 +42,12 @@ class TaskRepository:
 
         return await self.collection.find_one({"_id": oid})
 
+    async def get_by_task_number(self, task_number: int) -> Optional[dict]:
+        """Look up a task by its human-friendly task number."""
+        return await self.collection.find_one({"task_number": task_number})
+
     async def list(self, limit: int = 100) -> List[dict]:
-        return await self.collection.find().limit(limit).to_list(length=limit)
+        return await self.collection.find().sort("task_number", -1).limit(limit).to_list(length=limit)
 
     # ---------- UPDATE ----------
 

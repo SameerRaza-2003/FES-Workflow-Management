@@ -35,7 +35,7 @@ def get_task_service(
     history_service = TaskHistoryService(history_repo)
 
     notification_repo = NotificationRepository(db)
-    notification_service = NotificationService(notification_repo)
+    notification_service = NotificationService(notification_repo, db)
 
     return TaskService(
         task_repo,
@@ -65,6 +65,7 @@ async def to_task_response(task: dict) -> TaskResponse:
     
     return TaskResponse(
         id=str(task["_id"]),
+        task_number=task.get("task_number", 0),
         content_type=task["content_type"],
         size=task.get("size"),
         title=task["title"],

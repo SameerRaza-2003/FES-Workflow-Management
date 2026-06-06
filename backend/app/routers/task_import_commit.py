@@ -34,7 +34,7 @@ def get_commit_service(
     )
 
     notification_service = NotificationService(
-        NotificationRepository(db)
+        NotificationRepository(db), db
     )
 
     return TaskImportCommitService(
